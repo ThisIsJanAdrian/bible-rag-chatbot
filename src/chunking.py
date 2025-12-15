@@ -1,13 +1,13 @@
 """
 chunking.py
 
-This module handles splitting the Bible verses loaded 
-from ingestion.py into overlapping chunks suitable for 
-embeddings in a RAG (Retrieval-Augmented Generation) system.
+Contains functions to create chunks of Bible verses for embeddings.
+Two approaches are implemented:
 
-Each chunk contains:
-- 'text': concatenated verse texts
-- 'metadata': context information (book, chapter/verse range, testament, section)
+1. verse-based chunking: fixed number of verses per chunk
+2. min-word-based chunking: accumulate verses until a minimum word threshold is reached
+
+Each function returns a list of dictionaries with chunk text and metadata.
 """
 
 from ingestion import load_kjv
@@ -57,10 +57,35 @@ def chunk_verses(verses: list[dict], chunk_size: int = 7, chunk_overlap: int = 2
 
 def chunk_verses_min_first(verses: list[dict], min_words: int = 120, chunk_overlap: int = 2) -> list[dict]:
     """
-    Create verse-aware chunks using a min-first word threshold.
+    Create overlapping chunks of verses for embeddings 
+    using a minimum word threshold. Note that this 
+    function chunks based on word count, not verse count.
 
-    A chunk will keep accumulating verses until it reaches
-    at least `min_words`. Verses are never split.
+    Parameters:
+        verses (list of dict): Loaded verses from ingestion.py
+        min_words (int, optional): Minimum number of words per chunk. Defaults to 120.
+        chunk_overlap (int, optional): Number of verses to overlap between chunks. Defaults to 2.
+
+    Returns:
+        list[dict]: Each dictionary represents a chunk:
+            {
+                'text': 'concatenated verse text...',
+                'metadata': {
+                    'book': str,
+                    'chapter_start': int,
+                    'verse_start': int,
+                    'chapter_end': int,
+                    'verse_end': int,
+                    'testament': str,
+                    'section': str or None
+                }
+            }
+
+    Notes:
+        - Chunks accumulate verses until the total word count reaches at least min_words.
+        - Verses are never split.
+        - The final chunk may contain fewer words than min_words if there are not enough remaining verses.
+        - The chunk_overlap parameter ensures semantic continuity between adjacent chunks.
     """
     chunks = []
     current_chunk = []
