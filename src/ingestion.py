@@ -78,8 +78,15 @@ def load_kjv() -> list[dict]:
         book_dir = DATA_DIR / book_name
         if not book_dir.exists() or not book_dir.is_dir():
             continue
-        for json_file in book_dir.glob("*.json"):
-            with open(json_file, "r", encoding="utf-8") as f:
+
+        # Sort JSON files numerically by chapter number
+        chapter_files = sorted(
+            book_dir.iterdir(),
+            key=lambda f: int(f.stem)  # f.stem is the filename without extension
+        )
+
+        for chapter_file in chapter_files:
+            with open(chapter_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 for verse in data.get("verses", []):
                     verses.append(
