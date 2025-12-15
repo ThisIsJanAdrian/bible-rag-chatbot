@@ -4,7 +4,7 @@ ingestion.py
 This module loads the King James Version (KJV) Bible 
 dataset from JSON files and converts it into a list of 
 structured verse objects. This module is strictly 
-responsible only for data ingestion and structuring.
+responsible for data ingestion and structuring only.
 """
 
 import json
