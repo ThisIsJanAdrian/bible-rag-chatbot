@@ -13,6 +13,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data" / "kjv"
 
+# Define the canonical order of books in the KJV Bible
 BIBLE_ORDER = [
     "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
     "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
@@ -29,6 +30,33 @@ BIBLE_ORDER = [
     "James", "1 Peter", "2 Peter", "1 John", "2 John",
     "3 John", "Jude", "Revelation"
     ]
+
+# Map books to OT or NT
+TESTAMENT = {book: "OT" for book in BIBLE_ORDER[:39]}
+TESTAMENT.update({book: "NT" for book in BIBLE_ORDER[39:]})
+
+# Map books to highlight sections of books
+SECTION = {book: "Gospels" for book in ["Matthew", "Mark", "Luke", "John"]}
+SECTION.update({book: "Pauline Epistles" for book in [
+    "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians",
+    "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians",
+    "1 Timothy", "2 Timothy", "Titus", "Philemon"]})
+SECTION.update({book: "General Epistles" for book in [
+    "James", "1 Peter", "2 Peter", "1 John", "2 John",
+    "3 John", "Jude"]})
+SECTION.update({book: "Torah" for book in [
+    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]})
+SECTION.update({book: "Historical Books" for book in [
+    "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
+    "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles",
+    "Ezra", "Nehemiah", "Esther"]})
+SECTION.update({book: "Wisdom Literature" for book in [
+    "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon"]}) 
+SECTION.update({book: "Prophets" for book in [
+    "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel",
+    "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah",
+    "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah",
+    "Malachi"]})
 
 def load_kjv() -> list[dict]:
     """
@@ -60,6 +88,8 @@ def load_kjv() -> list[dict]:
                         "chapter": verse.get("chapter"),
                         "verse": verse.get("verse"),
                         "text": verse.get("text"),
+                        "testament": TESTAMENT.get(data.get("book_name")),
+                        "section": SECTION.get(data.get("book_name"), None),
                         }
                     )
     return verses
@@ -67,4 +97,10 @@ def load_kjv() -> list[dict]:
 if __name__ == "__main__":
     verses = load_kjv()
     print(f"Loaded {len(verses)} verses from the KJV Bible dataset.")
-    print(f"Sample: {verses[:5]}")
+
+    # --- Sanity check: print verses from a specific book ---
+    book_to_check = "Revelation"
+    book_verses = [v for v in verses if v["book"] == book_to_check]
+    print(f"\nVerses from {book_to_check}:")
+    for v in book_verses:  # print first 5 for sanity
+        print(f'{v["book"]} {v["chapter"]}:{v["verse"]} - {v["text"]} ({v["testament"]}, {v["section"]})')
