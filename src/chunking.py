@@ -1,3 +1,15 @@
+"""
+chunking.py
+
+This module handles splitting the Bible verses loaded 
+from ingestion.py into overlapping chunks suitable for 
+embeddings in a RAG (Retrieval-Augmented Generation) system.
+
+Each chunk contains:
+- 'text': concatenated verse texts
+- 'metadata': context information (book, chapter/verse range, testament, section)
+"""
+
 from ingestion import load_kjv
 
 def chunk_verses(verses: list[dict], chunk_size: int = 10, chunk_overlap: int = 2) -> list[dict]:
@@ -10,7 +22,19 @@ def chunk_verses(verses: list[dict], chunk_size: int = 10, chunk_overlap: int = 
         chunk_overlap (int): Number of verses to overlap between chunks
 
     Returns:
-        list of dict: Each dict has 'text' and 'metadata'
+        list[dict]: Each dictionary represents a chunk:
+            {
+                'text': 'concatenated verse text...',
+                'metadata': {
+                    'book': str,
+                    'chapter_start': int,
+                    'verse_start': int,
+                    'chapter_end': int,
+                    'verse_end': int,
+                    'testament': str,
+                    'section': str or None
+                }
+            }
     """
     chunks = []
     for i in range(0, len(verses), chunk_size - chunk_overlap):
