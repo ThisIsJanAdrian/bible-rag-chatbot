@@ -1,5 +1,6 @@
 # Ignore backup and temp files
 *~
+~*
 *.tmp
 
 # Ignore Python cache
