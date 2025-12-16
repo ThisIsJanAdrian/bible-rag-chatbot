@@ -10,10 +10,11 @@ responsible for data ingestion and structuring only.
 import json
 from pathlib import Path
 
+# File paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data" / "kjv"
 
-# Define the canonical order of books in the KJV Bible
+# Bible canonical book order
 BIBLE_ORDER = [
     "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
     "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
@@ -58,7 +59,7 @@ SECTION.update({book: "Prophets" for book in [
     "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah",
     "Malachi"]})
 
-def load_kjv() -> list[dict]:
+def load_kjv(dir: Path) -> list[dict]:
     """
     Load the KJV Bible from JSON files into structured verse objects.
     
@@ -70,12 +71,11 @@ def load_kjv() -> list[dict]:
             - text (str)
     """
 
-    if not DATA_DIR.exists():
-        raise FileNotFoundError(f"KJV data directory not found: {DATA_DIR}")
-
+    if not dir.exists():
+        raise FileNotFoundError(f"KJV data directory not found: {dir}")
     verses = []
     for book_name in BIBLE_ORDER:
-        book_dir = DATA_DIR / book_name
+        book_dir = dir / book_name
         if not book_dir.exists() or not book_dir.is_dir():
             continue
 
@@ -102,7 +102,7 @@ def load_kjv() -> list[dict]:
     return verses
 
 if __name__ == "__main__":
-    verses = load_kjv()
+    verses = load_kjv(DATA_DIR)
     print(f"Loaded {len(verses)} verses from the KJV Bible dataset.")
 
     # --- Sanity check: print verses from a specific book ---

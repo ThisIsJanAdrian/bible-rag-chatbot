@@ -1,13 +1,15 @@
 """
 chunking.py
 
-Contains functions to create chunks of Bible verses for embeddings.
-Two approaches are implemented:
+Contains functions to create chunks of Bible verses 
+for embeddings. Two approaches are implemented:
 
 1. verse-based chunking: fixed number of verses per chunk
-2. min-word-based chunking: accumulate verses until a minimum word threshold is reached
+2. min-word-based chunking: accumulate verses until a 
+minimum word threshold is reached
 
-Each function returns a list of dictionaries with chunk text and metadata.
+Each function returns a list of dictionaries with chunk 
+text and metadata.
 """
 
 from ingestion import load_kjv
@@ -149,8 +151,8 @@ if __name__ == "__main__":
     #     print("Metadata:", chunk["metadata"])
     
     # --- Sanity check: print chunk statistics ---
-    chunk_word_counts = [len(chunk["text"].split()) for chunk in chunks]
-    print(f"Total chunks: {len(chunks)}")
-    print(f"Min words in a chunk: {min(chunk_word_counts)}")
-    print(f"Max words in a chunk: {max(chunk_word_counts)}")
-    print(f"Average words per chunk: {sum(chunk_word_counts)/len(chunk_word_counts):.1f}")
+    # chunk_word_counts = [len(chunk["text"].split()) for chunk in chunks]
+    # print(f"Total chunks: {len(chunks)}")
+    # print(f"Min words in a chunk: {min(chunk_word_counts)}")
+    # print(f"Max words in a chunk: {max(chunk_word_counts)}")
+    # print(f"Average words per chunk: {sum(chunk_word_counts)/len(chunk_word_counts):.1f}")
