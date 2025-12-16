@@ -12,7 +12,7 @@ Each function returns a list of dictionaries with chunk
 text and metadata.
 """
 
-from ingestion import load_kjv
+from preprocessing.ingestion import load_kjv
 
 def chunk_verses(verses: list[dict], chunk_size: int = 7, chunk_overlap: int = 2) -> list[dict]:
     """

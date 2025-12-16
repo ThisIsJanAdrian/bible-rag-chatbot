@@ -12,7 +12,7 @@ from pathlib import Path
 
 # File paths
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data" / "kjv"
+DATA_DIR = BASE_DIR / "data"
 
 # Bible canonical book order
 BIBLE_ORDER = [
@@ -102,11 +102,11 @@ def load_kjv(dir: Path) -> list[dict]:
     return verses
 
 if __name__ == "__main__":
-    verses = load_kjv(DATA_DIR)
+    verses = load_kjv(DATA_DIR / "kjv")
     print(f"Loaded {len(verses)} verses from the KJV Bible dataset.")
 
     # --- Sanity check: print verses from a specific book ---
-    book_to_check = "Revelation"
+    book_to_check = "Jude"
     book_verses = [v for v in verses if v["book"] == book_to_check]
     print(f"\nVerses from {book_to_check}:")
     for v in book_verses:  # print first 5 for sanity
