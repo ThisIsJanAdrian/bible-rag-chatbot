@@ -45,9 +45,9 @@ for book, verses in bible_verses_by_book.items():
         chunk_overlap=CHUNK_OVERLAP
     )
     chunks.extend(book_chunks)
-print(f"Total chunks created: {len(chunks)}")
+print(f"Total chunks created: {len(chunks)}.")
 
 # Save chunks to JSON
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     json.dump(chunks, f, ensure_ascii=False, indent=2)
-print(f"Saved chunks to {OUTPUT_FILE}")
+print(f"Saved chunks to {OUTPUT_FILE}.")
