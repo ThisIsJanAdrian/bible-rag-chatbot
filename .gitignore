@@ -3,12 +3,16 @@ __pycache__/
 *.py[cod]
 
 # Temp files
-~*                  # CodeRunner, VSCode backups
+~*                 
 *.tmp
 
 # OS-specific
 .DS_Store
 Thumbs.db
+
+# VS Code temp runner files
+tempCodeRunnerFile.py
+**/tempCodeRunnerFile.py
 
 # Vector databases
 data/chroma_db/
