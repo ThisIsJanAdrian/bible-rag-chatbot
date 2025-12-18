@@ -9,3 +9,6 @@ __pycache__/
 # OS-specific
 .DS_Store
 Thumbs.db
+
+# Vector databases
+data/chroma_db/
