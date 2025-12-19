@@ -108,9 +108,3 @@ print(f"Inserted {len(chunks)} chunks into the ChromaDB collection '{collection_
 # embedding = model.encode(test_chunk)
 # print(f"Test chunk embedding (first 5 values): {embedding[:5]}")
 # print(f"Embedding dimension: {len(embedding)}")
-
-# # Sanity check: test semantic retrieval
-# query_text = "Hosea and Gomer"
-# results = collection.query(query_texts=[query_text], n_results=3)
-# for i, r in enumerate(results["documents"][0]):
-#     print(f"Top {i+1} chunk:", r)
