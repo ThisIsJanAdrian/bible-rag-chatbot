@@ -10,7 +10,7 @@ from pathlib import Path
 from retrieve import retrieve_chunks
 
 # Configuration
-QUERY = "Paul Timothy servant gospel Jesus Christ"
+QUERY = "Gideon deliverance Midianites"
 TOP_K = 5
 
 def main():
@@ -20,9 +20,12 @@ def main():
 
     for i, chunk in enumerate(retrieved, start=1):
         meta = chunk["metadata"]
-        ref = f"{meta['book']} {meta['chapter_start']}:{meta['verse_start']}-{meta['verse_end']}"
+        if meta['chapter_start'] == meta['chapter_end']:
+            ref = f"{meta['book']} {meta['chapter_start']}:{meta['verse_start']}-{meta['verse_end']}"
+        else:
+            ref = f"{meta['book']} {meta['chapter_start']}:{meta['verse_start']}-{meta['chapter_end']}:{meta['verse_end']}"
         print(f"{i}. {ref}")
-        print(chunk["text"][:200] + "...\n")  # Show first 200 chars of chunk for preview
+        print(chunk["text"] + "...\n")
 
 if __name__ == "__main__":
     main()

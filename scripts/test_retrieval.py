@@ -17,7 +17,7 @@ DB_DIR = BASE_DIR / "data" / "chroma_db"
 
 # Configuration
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
-TEST_QUERY = "Paul Timothy servant gospel Jesus Christ"
+TEST_QUERY = "Gideon deliverance Midianites"
 TOP_K = 5
 
 # Initialize ChromaDB client
@@ -39,6 +39,9 @@ for i, (doc, meta) in enumerate(
     zip(results["documents"][0], results["metadatas"][0]),
     start=1
 ):
-    ref = f"{meta['book']} {meta['chapter_start']}:{meta['verse_start']}-{meta['verse_end']}"
+    if meta['chapter_start'] == meta['chapter_end']:
+        ref = f"{meta['book']} {meta['chapter_start']}:{meta['verse_start']}-{meta['verse_end']}"
+    else:
+        ref = f"{meta['book']} {meta['chapter_start']}:{meta['verse_start']}-{meta['chapter_end']}:{meta['verse_end']}"
     print(f"{i}. {ref}")
     print(doc, "\n")
