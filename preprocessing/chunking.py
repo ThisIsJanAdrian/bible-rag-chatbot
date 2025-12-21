@@ -12,7 +12,11 @@ Each function returns a list of dictionaries with chunk
 text and metadata.
 """
 
-from preprocessing.ingestion import load_kjv
+from pathlib import Path
+
+# File paths
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
 
 def chunk_verses(verses: list[dict], chunk_size: int = 7, chunk_overlap: int = 2) -> list[dict]:
     """
@@ -85,7 +89,7 @@ def chunk_verses_min_first(verses: list[dict], min_words: int = 120, chunk_overl
 
     Notes:
         - Chunks accumulate verses until the total word count reaches at least min_words.
-        - Verses are never split.
+        - Verses are never split across chunks.
         - The final chunk may contain fewer words than min_words if there are not enough remaining verses.
         - The chunk_overlap parameter ensures semantic continuity between adjacent chunks.
     """
@@ -138,10 +142,150 @@ def chunk_verses_min_first(verses: list[dict], min_words: int = 120, chunk_overl
 
     return chunks
 
+def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 120, chunk_overlap: int = 2) -> list[dict]:
+    """
+    Create overlapping chunks of verses for embeddings 
+    using a minimum word threshold, while preserving 
+    verse-level character indeces within each chunk.
+
+    Parameters:
+        verses (list of dict): Loaded verses from ingestion.py
+        min_words (int, optional): Minimum number of words per chunk. Defaults to 120.
+        chunk_overlap (int, optional): Number of verses to overlap between chunks. Defaults to 2.
+
+    Returns:
+        list[dict]: Each dictionary represents a chunk:
+            {
+                'text': 'concatenated verse text...',
+                'metadata': {
+                    'book': str,
+                    'chapter_start': int,
+                    'verse_start': int,
+                    'chapter_end': int,
+                    'verse_end': int,
+                    'testament': str,
+                    'section': str or None
+                },
+                'verse_indeces': [
+                    {
+                        'chapter': int,
+                        'verse': int,
+                        'start': int,
+                        'end': int
+                    },
+                    ...
+                ]
+            }
+
+    Notes:
+        - Chunks accumulate verses until the total word count reaches at least min_words.
+        - Verses are never split across chunks.
+        - The final chunk may contain fewer words than min_words if there are not enough remaining verses.
+        - The chunk_overlap parameter ensures semantic continuity between adjacent chunks.
+        - Verse indeces are character indices relative to the chunk's text field and include all characters (spaces, punctuation, and paragraph markers such as '¶').
+        - Verse indeces enable exact verse retrieval and paragraph-based extraction without re-chunking or re-embedding.
+    """
+    chunks = []
+    current_chunk = []
+    current_word_count = 0
+    i = 0
+
+    while i < (len(verses)):
+        verse = verses[i]
+        current_chunk.append(verse)
+        current_word_count += len(verse["text"].split())
+
+        if current_word_count >= min_words:
+            chunk_text_parts = []
+            verse_indeces = []
+            cursor = 0
+
+            for v in current_chunk:
+                text = v["text"]
+
+                start = cursor
+                end = start + len(text)
+
+                verse_indeces.append({
+                    "chapter": v["chapter"],
+                    "verse": v["verse"],
+                    "start": start,
+                    "end": end
+                })
+
+                chunk_text_parts.append(text)
+                cursor = end + 1  # space separator
+
+            chunk_text = " ".join(chunk_text_parts)
+            chunk_metadata = {
+                "book": current_chunk[0]["book"],
+                "chapter_start": current_chunk[0]["chapter"],
+                "verse_start": current_chunk[0]["verse"],
+                "chapter_end": current_chunk[-1]["chapter"],
+                "verse_end": current_chunk[-1]["verse"],
+                "testament": current_chunk[0]["testament"],
+                "section": current_chunk[0]["section"]
+            }
+            chunks.append({
+                "text": chunk_text,
+                "metadata": chunk_metadata,
+                "verse_indeces": verse_indeces
+            })
+
+            if chunk_overlap > 0:
+                current_chunk = current_chunk[-chunk_overlap:]
+                current_word_count = sum(
+                    len(v["text"].split()) for v in current_chunk
+                )
+            else:
+                current_chunk = []
+                current_word_count = 0
+        i += 1
+    
+    # Add any remaining verses as a final chunk
+    if current_chunk:
+        chunk_text_parts = []
+        verse_indeces = []
+        cursor = 0
+
+        for v in current_chunk:
+            text = v["text"]
+
+            start = cursor
+            end = start + len(text)
+
+            verse_indeces.append({
+                "chapter": v["chapter"],
+                "verse": v["verse"],
+                "start": start,
+                "end": end
+            })
+
+            chunk_text_parts.append(text)
+            cursor = end
+
+        chunk_text = " ".join(chunk_text_parts)
+        chunk_metadata = {
+            "book": current_chunk[0]["book"],
+            "chapter_start": current_chunk[0]["chapter"],
+            "verse_start": current_chunk[0]["verse"],
+            "chapter_end": current_chunk[-1]["chapter"],
+            "verse_end": current_chunk[-1]["verse"],
+            "testament": current_chunk[0]["testament"],
+            "section": current_chunk[0]["section"]
+        }
+        chunks.append({
+            "text": chunk_text,
+            "metadata": chunk_metadata,
+            "verse_indeces": verse_indeces
+        })
+    return chunks
+
 if __name__ == "__main__":
-    verses = load_kjv()
+    from ingestion import load_kjv
+    verses = load_kjv(DATA_DIR / "kjv")
     # chunks = chunk_verses(verses, chunk_size=10, chunk_overlap=2)
-    chunks = chunk_verses_min_first(verses, min_words=120, chunk_overlap=2)
+    chunks = chunk_verses_min_first_with_indexing(verses, min_words=120, chunk_overlap=2)
     print(f"Total chunks created: {len(chunks)}")
 
     # --- Sanity check: print first 2 chunks ---
@@ -150,9 +294,9 @@ if __name__ == "__main__":
     #     print("Text:", chunk["text"][:100] + "...")
     #     print("Metadata:", chunk["metadata"])
     
-    # --- Sanity check: print chunk statistics ---
-    # chunk_word_counts = [len(chunk["text"].split()) for chunk in chunks]
-    # print(f"Total chunks: {len(chunks)}")
-    # print(f"Min words in a chunk: {min(chunk_word_counts)}")
-    # print(f"Max words in a chunk: {max(chunk_word_counts)}")
-    # print(f"Average words per chunk: {sum(chunk_word_counts)/len(chunk_word_counts):.1f}")
+    # --- Sanity check: print specified range of verses ---
+    for i in range (10000, 10001):
+        chunk = chunks[i]
+        for j in range(len(chunk["verse_indeces"])):
+            v = chunk["verse_indeces"][j]
+            print(chunk["text"][v["start"]:v["end"]])

@@ -78,6 +78,8 @@ for chunk in chunks:
         "testament": str(chunk["metadata"]["testament"]),
         "section": str(chunk["metadata"]["section"] or "")
     }
+    if "verse_indices" in chunk:
+        clean_metadata["verse_indices"] = chunk["verse_indices"]
     metadatas.append(clean_metadata)
 
 # Embed and insert chunks into ChromaDB with progress bar

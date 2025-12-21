@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from preprocessing.ingestion import load_kjv
-from preprocessing.chunking import chunk_verses, chunk_verses_min_first
+from preprocessing.chunking import chunk_verses, chunk_verses_min_first, chunk_verses_min_first_with_indexing
 
 from collections import defaultdict
 
@@ -39,7 +39,7 @@ for verse in bible_verses:
 # Chunking
 chunks = []
 for book, verses in bible_verses_by_book.items():
-    book_chunks = chunk_verses_min_first(
+    book_chunks = chunk_verses_min_first_with_indexing(
         verses,
         min_words=MIN_WORDS,
         chunk_overlap=CHUNK_OVERLAP
