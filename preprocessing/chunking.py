@@ -210,7 +210,7 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
                     "chapter": v["chapter"],
                     "verse": v["verse"],
                     "start": start,
-                    "end": end
+                    "end": end - 1 # excluding ending space
                 })
 
                 chunk_text_parts.append(text)
@@ -258,11 +258,11 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
                 "chapter": v["chapter"],
                 "verse": v["verse"],
                 "start": start,
-                "end": end
+                "end": end - 1 # excluding ending space
             })
 
             chunk_text_parts.append(text)
-            cursor = end
+            cursor = end + 1  # space separator
 
         chunk_text = " ".join(chunk_text_parts)
         chunk_metadata = {

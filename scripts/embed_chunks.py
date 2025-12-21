@@ -22,6 +22,7 @@ from chromadb.utils import embedding_functions
 BASE_DIR = Path(__file__).resolve().parent.parent
 CHUNKS_FILE = BASE_DIR / "data" / "kjv_chunks.json"
 DB_DIR = BASE_DIR / "data" / "chroma_db"
+VERSE_INDECES_FILE = BASE_DIR / "data" / "kjv_verse_indeces.json"
 
 # Configuration
 EMBEDDING_MODEL_NAME = "BAAI/bge-base-en-v1.5"
@@ -60,6 +61,7 @@ except chromadb.errors.NotFoundError:
     print(f"Created new collection: {collection_name}.")
 
 # Prepare data for insertion
+verse_indeces_store = {}
 ids = []
 texts = []
 metadatas = []
@@ -67,6 +69,9 @@ for chunk in chunks:
     chunk_id = str(uuid.uuid4())
     ids.append(chunk_id)
     texts.append(chunk["text"])
+
+    if "verse_indeces" in chunk:
+        verse_indeces_store[chunk_id] = chunk["verse_indeces"]
 
     # Ensure metadata types are correct for ChromaDB storage
     clean_metadata = {
@@ -78,8 +83,6 @@ for chunk in chunks:
         "testament": str(chunk["metadata"]["testament"]),
         "section": str(chunk["metadata"]["section"] or "")
     }
-    if "verse_indices" in chunk:
-        clean_metadata["verse_indices"] = chunk["verse_indices"]
     metadatas.append(clean_metadata)
 
 # Embed and insert chunks into ChromaDB with progress bar
@@ -102,11 +105,8 @@ for i in tqdm(range(num_insert_batches), desc="Inserting chunks", unit="batch"):
         metadatas=metadatas[start_idx:end_idx],
         embeddings=embeddings[start_idx:end_idx]
     )
-print(f"Inserted {len(chunks)} chunks into the ChromaDB collection '{collection_name}' at {DB_DIR}.")
+print(f"Inserted {len(chunks)} chunks into the ChromaDB collection '{collection_name}' at {DB_DIR}...")
 
-# Sanity check: embed 1 chunk
-# test_chunk = chunks[0]["text"]
-# print(f"Embedding test chunk: {test_chunk[:60]}...")
-# embedding = model.encode(test_chunk)
-# print(f"Test chunk embedding (first 5 values): {embedding[:5]}")
-# print(f"Embedding dimension: {len(embedding)}")
+with open(VERSE_INDECES_FILE, "w", encoding="utf-8") as f:
+    json.dump(verse_indeces_store, f, ensure_ascii=False, indent=2)
+print(f"Saved verse indeces for {len(verse_indeces_store)} chunks to {VERSE_INDECES_FILE}.")
