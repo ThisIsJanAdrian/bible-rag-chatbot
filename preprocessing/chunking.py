@@ -146,7 +146,7 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
     """
     Create overlapping chunks of verses for embeddings 
     using a minimum word threshold, while preserving 
-    verse-level character indeces within each chunk.
+    verse-level character indices within each chunk.
 
     Parameters:
         verses (list of dict): Loaded verses from ingestion.py
@@ -166,7 +166,7 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
                     'testament': str,
                     'section': str or None
                 },
-                'verse_indeces': [
+                'verse_indices': [
                     {
                         'chapter': int,
                         'verse': int,
@@ -182,8 +182,8 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
         - Verses are never split across chunks.
         - The final chunk may contain fewer words than min_words if there are not enough remaining verses.
         - The chunk_overlap parameter ensures semantic continuity between adjacent chunks.
-        - Verse indeces are character indices relative to the chunk's text field and include all characters (spaces, punctuation, and paragraph markers such as '¶').
-        - Verse indeces enable exact verse retrieval and paragraph-based extraction without re-chunking or re-embedding.
+        - Verse indices are character indices relative to the chunk's text field and include all characters (spaces, punctuation, and paragraph markers such as '¶').
+        - Verse indices enable exact verse retrieval and paragraph-based extraction without re-chunking or re-embedding.
     """
     chunks = []
     current_chunk = []
@@ -197,7 +197,7 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
 
         if current_word_count >= min_words:
             chunk_text_parts = []
-            verse_indeces = []
+            verse_indices = []
             cursor = 0
 
             for v in current_chunk:
@@ -206,11 +206,11 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
                 start = cursor
                 end = start + len(text)
 
-                verse_indeces.append({
+                verse_indices.append({
                     "chapter": v["chapter"],
                     "verse": v["verse"],
                     "start": start,
-                    "end": end - 1 # excluding ending space
+                    "end": end
                 })
 
                 chunk_text_parts.append(text)
@@ -229,7 +229,7 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
             chunks.append({
                 "text": chunk_text,
                 "metadata": chunk_metadata,
-                "verse_indeces": verse_indeces
+                "verse_indices": verse_indices
             })
 
             if chunk_overlap > 0:
@@ -245,7 +245,7 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
     # Add any remaining verses as a final chunk
     if current_chunk:
         chunk_text_parts = []
-        verse_indeces = []
+        verse_indices = []
         cursor = 0
 
         for v in current_chunk:
@@ -254,11 +254,11 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
             start = cursor
             end = start + len(text)
 
-            verse_indeces.append({
+            verse_indices.append({
                 "chapter": v["chapter"],
                 "verse": v["verse"],
                 "start": start,
-                "end": end - 1 # excluding ending space
+                "end": end
             })
 
             chunk_text_parts.append(text)
@@ -277,7 +277,7 @@ def chunk_verses_min_first_with_indexing(verses: list[dict], min_words: int = 12
         chunks.append({
             "text": chunk_text,
             "metadata": chunk_metadata,
-            "verse_indeces": verse_indeces
+            "verse_indices": verse_indices
         })
     return chunks
 
@@ -297,6 +297,6 @@ if __name__ == "__main__":
     # --- Sanity check: print specified range of verses ---
     for i in range (10000, 10001):
         chunk = chunks[i]
-        for j in range(len(chunk["verse_indeces"])):
-            v = chunk["verse_indeces"][j]
+        for j in range(len(chunk["verse_indices"])):
+            v = chunk["verse_indices"][j]
             print(chunk["text"][v["start"]:v["end"]])

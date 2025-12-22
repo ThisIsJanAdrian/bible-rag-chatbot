@@ -22,13 +22,13 @@ from chromadb.utils import embedding_functions
 BASE_DIR = Path(__file__).resolve().parent.parent
 CHUNKS_FILE = BASE_DIR / "data" / "kjv_chunks.json"
 DB_DIR = BASE_DIR / "data" / "chroma_db"
-VERSE_INDECES_FILE = BASE_DIR / "data" / "kjv_verse_indeces.json"
+VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 
 # Configuration
 EMBEDDING_MODEL_NAME = "BAAI/bge-base-en-v1.5"
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
 DEVICE = "cpu"
-EMBED_BATCH_SIZE = 128
+EMBED_BATCH_SIZE = 16
 INSERT_BATCH_SIZE = 5000
 
 # Load chunks
@@ -61,7 +61,7 @@ except chromadb.errors.NotFoundError:
     print(f"Created new collection: {collection_name}.")
 
 # Prepare data for insertion
-verse_indeces_store = {}
+verse_indices_store = {}
 ids = []
 texts = []
 metadatas = []
@@ -70,8 +70,8 @@ for chunk in chunks:
     ids.append(chunk_id)
     texts.append(chunk["text"])
 
-    if "verse_indeces" in chunk:
-        verse_indeces_store[chunk_id] = chunk["verse_indeces"]
+    if "verse_indices" in chunk:
+        verse_indices_store[chunk_id] = chunk["verse_indices"]
 
     # Ensure metadata types are correct for ChromaDB storage
     clean_metadata = {
@@ -87,7 +87,7 @@ for chunk in chunks:
 
 # Embed and insert chunks into ChromaDB with progress bar
 embeddings = []
-for i in tqdm(range(0, len(texts), EMBED_BATCH_SIZE), desc=f"Embedding chunks in {EMBED_BATCH_SIZE} batches", unit="batch"):
+for i in tqdm(range(0, len(texts), EMBED_BATCH_SIZE), desc=f"Embedding chunks in {math.ceil(len(texts) / EMBED_BATCH_SIZE)} batches", unit="batch"):
     batch_texts = texts[i:i + EMBED_BATCH_SIZE]
     batch_embeddings = model.encode(batch_texts, batch_size=EMBED_BATCH_SIZE, show_progress_bar=False)
     embeddings.extend(batch_embeddings)
@@ -107,6 +107,6 @@ for i in tqdm(range(num_insert_batches), desc="Inserting chunks", unit="batch"):
     )
 print(f"Inserted {len(chunks)} chunks into the ChromaDB collection '{collection_name}' at {DB_DIR}...")
 
-with open(VERSE_INDECES_FILE, "w", encoding="utf-8") as f:
-    json.dump(verse_indeces_store, f, ensure_ascii=False, indent=2)
-print(f"Saved verse indeces for {len(verse_indeces_store)} chunks to {VERSE_INDECES_FILE}.")
+with open(VERSE_INDICES_FILE, "w", encoding="utf-8") as f:
+    json.dump(verse_indices_store, f, ensure_ascii=False, indent=2)
+print(f"Saved verse indices for {len(verse_indices_store)} chunks to {VERSE_INDICES_FILE}.")
