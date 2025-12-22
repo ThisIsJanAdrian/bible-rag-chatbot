@@ -8,8 +8,13 @@ already been populated with data.
 
 This script does NOT perform embedding.
 """
+import json, sys
 from pathlib import Path
-import chromadb, json
+
+# Add project root to sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from retrieval.retrieve import get_collection, retrieve_chunks
 
 # File paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,7 +23,7 @@ VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 
 # Configuration
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
-TEST_QUERY = "in a coffin in Egypt"
+QUERY = "For even the Son of man came not to be ministered unto"
 TOP_K = 5
 
 # Load verse indices
@@ -27,34 +32,34 @@ with open(VERSE_INDICES_FILE, "r", encoding="utf-8") as f:
 print(f"Loaded verse indices for {len(verse_indices)} chunks.")
 
 # Initialize ChromaDB client
-client = chromadb.PersistentClient(path=str(DB_DIR))
-collection = client.get_collection(name=CHROMA_COLLECTION_NAME)
+collection = get_collection(str(DB_DIR), CHROMA_COLLECTION_NAME)
 print(f"Loaded collection: {CHROMA_COLLECTION_NAME}")
 print(f"Total documents: {collection.count()}")
 
 # Perform retrieval
-results = collection.query(
-    query_texts=[TEST_QUERY],
-    n_results=TOP_K,
-    include=["documents", "metadatas"]
-)
+results = retrieve_chunks(collection, QUERY, top_k=3)
 
 # Display results
 print("\nQuery:")
-print(TEST_QUERY)
+print(QUERY)
 print("\nTop results:\n")
 
-for rank, (doc, meta, chunk_id) in enumerate(
-    zip(
-        results["documents"][0],
-        results["metadatas"][0],
-        results["ids"][0]
-    ),
-    start=1
-):
-    print(f"{rank}. {meta['book']} "
-          f"{meta['chapter_start']}:{meta['verse_start']}-{meta['verse_end']}" if meta['chapter_start'] == meta['chapter_end']
-          else f"{rank}. {meta['book']} {meta['chapter_start']}:{meta['verse_start']}-{meta['chapter_end']}:{meta['verse_end']}")
+for rank, item in enumerate(results, start=1):
+    doc = item["text"]
+    meta = item["metadata"]
+    chunk_id = item["id"]
+
+    # Reference formatting
+    if meta["chapter_start"] == meta["chapter_end"]:
+        ref = f"{meta['book']} {meta['chapter_start']}:{meta['verse_start']}-{meta['verse_end']}"
+    else:
+        ref = (
+            f"{meta['book']} "
+            f"{meta['chapter_start']}:{meta['verse_start']}-"
+            f"{meta['chapter_end']}:{meta['verse_end']}"
+        )
+
+    print(f"{rank}. {ref}")
 
     chunk_verse_indices = verse_indices.get(chunk_id)
 
