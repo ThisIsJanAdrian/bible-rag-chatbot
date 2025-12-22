@@ -6,8 +6,7 @@ Loads raw Bible JSON files using ingestion.py and creates
 chunks using chunking.py. Saves the resulting chunks to 
 data/kjv_chunks.json for downstream embedding generation.
 """
-import json
-import sys
+import json, sys
 from pathlib import Path
 
 # Add project root to sys.path
