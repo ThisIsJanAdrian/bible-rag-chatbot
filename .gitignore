@@ -6,6 +6,10 @@ __pycache__/
 ~*                 
 *.tmp
 
+# Environment files
+.env
+.venv/
+
 # OS-specific
 .DS_Store
 Thumbs.db
