@@ -28,8 +28,8 @@ VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 # Configuration
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
 MODEL_NAME = "HuggingFaceTB/SmolLM3-3B"
-TOP_K = 5
-MAX_TOKENS = 512
+TOP_K = 10
+MAX_TOKENS = 1024
 TEMPERATURE = 0.0
 
 # Check Hugging Face model availability
@@ -40,7 +40,7 @@ collection = get_collection(str(DB_DIR), CHROMA_COLLECTION_NAME)
 with open(VERSE_INDICES_FILE, "r", encoding="utf-8") as f:
     verse_indices = json.load(f)
 
-def retrieve_and_answer(query: str, top_k: int = 5) -> str:
+def retrieve_and_answer(query: str, top_k: int = TOP_K) -> str:
     """
     Retrieve Scripture passages and generate a grounded answer.
 
@@ -56,13 +56,10 @@ def retrieve_and_answer(query: str, top_k: int = 5) -> str:
         return "No relevant Scripture passages found for this question."
 
     context = format_context(retrieved, verse_indices)
-    user_prompt = (f"""
-        Question:
-        {query}
-
-        Scripture Passages:
-        {context}
-        """.strip()
+    user_prompt = (
+        f"Question: {query}\n\n"
+        f"Using ONLY the following Scripture passages, answer the question:\n\n"
+        f"{context}\n\n"
     )
     
     return query_hf(MODEL_NAME, user_prompt, MAX_TOKENS, TEMPERATURE)
