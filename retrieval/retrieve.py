@@ -42,24 +42,27 @@ def retrieve_chunks(
                 "id": str,            # chunk UUID
                 "text": str,          # chunk text
                 "metadata": dict      # chunk metadata (book, chapter_start, verse_start, chapter_end, verse_end, testament, section)
+                "score": float        # embedding similarity score
             }
     """
     results = collection.query(
         query_texts=[query],
         n_results=top_k,
-        include=["documents", "metadatas"]
+        include=["documents", "metadatas", "distances"]
     )
 
     retrieved = []
-    for chunk_id, doc, meta in zip(
+    for chunk_id, doc, meta, score in zip(
         results["ids"][0],
         results["documents"][0],
-        results["metadatas"][0]
+        results["metadatas"][0],
+        results["distances"][0]
     ):
         retrieved.append({
             "id": chunk_id,
             "text": doc,
-            "metadata": meta
+            "metadata": meta,
+            "score": score
         })
 
     return retrieved
