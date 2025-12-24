@@ -50,10 +50,10 @@ def format_context(retrieved_chunks: List[Dict], verse_indices: Dict[str, List[i
             verses = []
             for v in verse_list:
                 verse_text = text[v["start"]:v["end"]].strip()
-                verses.append(f"{meta['book']} {v['chapter']}:{v['verse']} \"{verse_text}\"")
+                verses.append(f"{meta['book']} {v['chapter']}:{v['verse']} — \"{verse_text}\"")
             formatted_text = "\n".join(verses)
 
-        passage_block = f"[Passage {idx}]\n{formatted_text}"
+        passage_block = f"[Passage {idx}]\nChunk reference: {reference}\n{formatted_text}"
         passages.append(passage_block)
 
     return "\n\n".join(passages)
