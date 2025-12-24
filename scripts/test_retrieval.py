@@ -16,6 +16,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from retrieval.retrieve import get_collection, retrieve_chunks
 from retrieval.format_context import format_context
+from utils.retrieval_preprocessing import preprocess_query
 
 # File paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,8 +25,7 @@ VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 
 # Configuration
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
-QUERY = "What does the Bible say about faith and works?"
-TOP_K = 5
+TOP_K = 10
 
 # Load verse indices
 with open(VERSE_INDICES_FILE, "r", encoding="utf-8") as f:
@@ -37,12 +37,16 @@ collection = get_collection(str(DB_DIR), CHROMA_COLLECTION_NAME)
 print(f"Loaded collection: {CHROMA_COLLECTION_NAME}")
 print(f"Total documents: {collection.count()}")
 
+# Acquire and preprocess user query
+user_query = input("\nAsk a Bible question:\n> ")
+print(f"User query: {user_query}")
+clean_query = preprocess_query(user_query)
+print(f"Preprocessed query: {clean_query}")
+
 # Perform retrieval
-results = retrieve_chunks(collection, QUERY, top_k=3)
+results = retrieve_chunks(collection, clean_query, TOP_K)
 
 # Display results
-print("\nQuery:")
-print(QUERY)
 print("\nTop results:")
 formatted_context = format_context(results, verse_indices)
 print(formatted_context)
