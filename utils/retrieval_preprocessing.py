@@ -5,7 +5,7 @@ Utilities for preprocessing user queries and re-ranking
 retrieved Bible chunks based on query relevance.
 """
 
-import spacy, re
+import spacy, re, math
 from typing import List, Dict
 
 # Lazy-load spaCy model
@@ -59,7 +59,7 @@ def simple_tokenize(text: str) -> List[str]:
     text = re.sub(r"[^\w\s]", "", text)
     return text.split()
 
-def extract_phrases(text: str, min_words: int = 3, max_words: int = 5) -> List[str]:
+def extract_phrases(text: str, min_words: int = 2, max_words: int = 5) -> List[str]:
     """
     Extract n-grams (phrases) from text.
 
@@ -71,7 +71,10 @@ def extract_phrases(text: str, min_words: int = 3, max_words: int = 5) -> List[s
     Returns:
         List[str]: List of extracted phrases.
     """
-    tokens = simple_tokenize(text)
+    nlp = get_spacy_nlp()
+    doc = nlp(text.lower())
+    tokens = [token.lemma_ for token in doc if token.is_alpha]
+
     phrases = []
     for n in range(min_words, max_words + 1):
         for i in range(len(tokens) - n + 1):
@@ -79,25 +82,38 @@ def extract_phrases(text: str, min_words: int = 3, max_words: int = 5) -> List[s
             phrases.append(phrase)
     return phrases
 
-def compute_phrase_overlap(query: str, chunk_text: str) -> float:
+def compute_phrase_overlap(query: str, chunk_text: str, max_words: int = 5, k: float = 3.0) -> float:
     """
-    Compute phrase overlap ratio between query and chunk text.
+    Compute phrase overlap ratio between query and chunk text,
+    and apply an exponential bump to emphasize exact matches.
 
     Parameters:
         query (str): User query.
         chunk_text (str): Retrieved chunk text.
+        max_words (int): Maximum words in phrase, refer to extract_phrases().
+        k (float): Bump factor for exponential scaling.
 
     Returns:
-        float: Overlap ratio (0.0 to 1.0).
+        float: Bumped overlap score (0.0 to 1.0).
     """
     query_phrases = set(extract_phrases(query.lower()))
     chunk_phrases = set(extract_phrases(chunk_text.lower()))
-    if not query_phrases:
+    if not query_phrases or not chunk_phrases:
         return 0.0
     overlap = query_phrases.intersection(chunk_phrases)
-    return len(overlap) / len(query_phrases)
+    raw_score = len(overlap) / min(len(query_phrases), len(chunk_phrases))
 
-def rerank_chunks(chunks: List[Dict], query: str, alpha: float = 0.5, min_score: float = 0.1, verbose: bool = False) -> List[Dict]:
+    max_phrase_len = max(
+        (len(p.split()) for p in overlap),
+        default=0
+    )
+    length_bonus = max_phrase_len / max_words
+
+    combined = 0.7 * raw_score + 0.3 * length_bonus
+    bumped = 1 - math.exp(-k * combined)
+    return min(1.0, bumped)
+
+def rerank_chunks(chunks: List[Dict], query: str, alpha: float = 0.8, min_score: float = 0.3, verbose: bool = False) -> List[Dict]:
     """
     Re-rank ChromaDB retrieved chunks using embedding similarity
     and multi-word phrase overlap with the user query.
@@ -119,10 +135,11 @@ def rerank_chunks(chunks: List[Dict], query: str, alpha: float = 0.5, min_score:
         embedding_score = chunk.get("score", 0.0)
         chunk["re_rank_score"] = alpha * embedding_score + (1 - alpha) * phrase_score
 
+        if verbose:
+            print(f"Chunk text: {chunk['text'][:50]}...")
+            print(f"Re-rank score: {chunk['re_rank_score']:.4f} (Embed: {embedding_score:.4f}, Phrase: {phrase_score:.4f})\n")
+        
         if chunk["re_rank_score"] >= min_score:
             filtered_chunks.append(chunk)
-            if verbose:
-                print(f"Chunk text: {chunk['text'][:50]}...")
-                print(f"Re-rank score: {chunk['re_rank_score']:.4f} (Embed: {embedding_score:.4f}, Phrase: {phrase_score:.4f})")
 
     return sorted(filtered_chunks, key=lambda x: x["re_rank_score"], reverse=True)

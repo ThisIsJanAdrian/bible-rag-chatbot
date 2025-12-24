@@ -47,11 +47,8 @@ print(f"Preprocessed query: {clean_query}")
 results = retrieve_chunks(collection, clean_query, TOP_K)
 print(f"Retrieved {len(results)} chunks.")
 
-for r in results:
-    print(r['text'][:50], r.get('score', None))
-
 # Re-rank retrieved chunks
-reranked_results = rerank_chunks(results, user_query, alpha=0.8, min_score=0.5, verbose=True)
+reranked_results = rerank_chunks(results, user_query, alpha=0.6, min_score=0.3, verbose=True)
 print(f"{len(reranked_results)} chunks remain after re-ranking and filtering.")
 
 # Display results
