@@ -15,8 +15,9 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from retrieval.retrieve import get_collection, retrieve_chunks
+from retrieval.retrieval_preprocessing import preprocess_query
+from retrieval.reranking import rerank_chunks
 from retrieval.format_context import format_context
-from utils.retrieval_preprocessing import preprocess_query, rerank_chunks
 
 # File paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,7 +49,7 @@ results = retrieve_chunks(collection, clean_query, TOP_K)
 print(f"Retrieved {len(results)} chunks.")
 
 # Re-rank retrieved chunks
-reranked_results = rerank_chunks(results, user_query, alpha=0.6, min_score=0.3, verbose=True)
+reranked_results = rerank_chunks(results, user_query, min_score=0.3, verbose=True)
 print(f"{len(reranked_results)} chunks remain after re-ranking and filtering.")
 
 # Display results
