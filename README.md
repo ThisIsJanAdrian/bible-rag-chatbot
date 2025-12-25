@@ -34,23 +34,33 @@ Think of BibleBro as your **Bible study aide**, intentionally unbiased and speak
 
 ## 📂 Project Structure
 ```
+app/
+  └── chat.py                     # Entry point for chatbot interface (soon)
+
 data/
-  ├── kjv_chunks.json
-  ├── kjv_verse_indeces.json
-  └── chroma_db/          # (ignored in git)
+  ├── kjv_chunks.json             # Pre-chunked KJV Bible text with references
+  ├── kjv_verse_indeces.json      # Mapping of chunk IDs to book/chapter/verse
+  └── chroma_db/                  # Local Chroma vector store (gitignored)
 
 preprocessing/
-  ├── ingestion.py
-  └── chunking.py
+  ├── chunking.py                 # Logic for splitting Bible text into semantic chunks
+  └── ingestion.py                # Loads chunks and metadata into ChromaDB
 
 retrieval/
-  ├── retrieve.py
-  └── format_context.py
+  ├── format_context.py           # Formats retrieved passages for LLM prompting
+  ├── query_modes.py              # Heuristic detection of query intent (law, discourse, etc.)
+  ├── reranking.py                # Hybrid re-ranking (embeddings + phrase overlap + query modes)
+  ├── retrieval_preprocessing.py  # Query normalization, lemmatization, phrase extraction
+  ├── retrieve.py                 # Vector search interface over ChromaDB
+  └── retrieve_and_answer.py      # End-to-end retrieval + LLM answer pipeline (to be updated)
 
 scripts/
-  ├── create_chunks.py
-  ├── embed_chunks.py
-  └── test_retrieval.py
+  ├── create_chunks.py            # One-time script to generate Bible chunks
+  ├── embed_chunks.py             # Generates embeddings and populates vector store
+  └── test_retrieval.py           # Entry point for chunk retrieval (no LLM)
+
+utils/
+  └── hf_utils.py                 # Hugging Face model and embedding helpers
 ```
 
 ---
@@ -64,9 +74,11 @@ scripts/
 - [x] Semantic retrieval  
 - [x] Verse-level reconstruction within chunks  
 - [x] Human-readable formatted context  
-- [ ] LLM integration with strict grounding rules  
-- [ ] `retrieve_and_answer.py` pipeline  
-- [ ] System prompt for Scripture-only answers  
+- [x] LLM integration with strict grounding rules  
+- [x] `retrieve_and_answer.py` pipeline  
+- [x] System prompt for Scripture-only answers
+- [x] Retrieval evaluation & regression tests
+- [ ] Improve chunk reranking intelligence
 - [ ] Local UI (Streamlit)  
 - [ ] Error handling and safeguards  
 - [ ] Expanded documentation and examples  
