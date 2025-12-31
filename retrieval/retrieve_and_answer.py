@@ -17,7 +17,9 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from retrieve import retrieve_chunks, get_collection
-from format_context import format_context
+from retrieval.retrieval_preprocessing import preprocess_query
+from retrieval.reranking import rerank_chunks
+from retrieval.format_context import format_context
 from utils.hf_utils import check_model_inference_status, query_hf
 
 # File paths
@@ -40,22 +42,28 @@ collection = get_collection(str(DB_DIR), CHROMA_COLLECTION_NAME)
 with open(VERSE_INDICES_FILE, "r", encoding="utf-8") as f:
     verse_indices = json.load(f)
 
-def retrieve_and_answer(query: str, top_k: int = TOP_K) -> str:
+def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False) -> str:
     """
     Retrieve Scripture passages and generate a grounded answer.
 
     Parameters:
         query (str): User question
         top_k (int): Number of chunks to retrieve
+        use_llm (bool): If True, use LLM to generate answer; otherwise return raw context
 
     Returns:
         str: LLM-generated, Scripture-grounded answer
     """
-    retrieved = retrieve_chunks(collection, query, top_k=top_k)
+    retrieved = retrieve_chunks(collection, preprocess_query(query), top_k=top_k)
     if not retrieved:
         return "No relevant Scripture passages found for this question."
+    
+    reranked = rerank_chunks(retrieved, query, min_score=0.4, verbose=False)
+    context = format_context(reranked, verse_indices)
 
-    context = format_context(retrieved, verse_indices)
+    if not use_llm:
+        return context
+    
     user_prompt = (
         f"Question: {query}\n\n"
         f"Using ONLY the following Scripture passages, answer the question:\n\n"
