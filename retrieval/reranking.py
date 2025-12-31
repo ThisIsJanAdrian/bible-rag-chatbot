@@ -105,6 +105,9 @@ def compute_alpha_from_query_modes(query_modes: Dict[str, float], verbose: bool 
     alpha -= 0.3 * query_modes["law"]
     alpha -= 0.3 * query_modes["lookup"]
 
+    # Reduce the impact of prophetic patterns for NT-like queries
+    alpha -= 0.2 * query_modes["prophetic"]
+
     # Increase weight on embeddings for discourse, wisdom, and open queries
     alpha += 0.2 * query_modes["discourse"]
     alpha += 0.1 * query_modes["wisdom"]

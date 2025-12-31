@@ -1,5 +1,6 @@
 """
 test_retrieval.py
+
 Script to test semantic retrieval from ChromaDB collection.
 Loads the existing collection, embeds a test query, and 
 retrieves similar chunks to verify correct storage and 

@@ -56,6 +56,9 @@ DISCOURSE_PATTERNS = [
     # Sermon language
     r"\bblessed\s+are\b",
     r"\bverily\b|\bverily,\s+verily\b",
+    r"\bwoe unto\b",
+    r"\bbuild .* on the sand\b",
+    r"\bjesus said\b",
 ]
 
 PROPHETIC_PATTERNS = [
