@@ -29,8 +29,15 @@ VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 
 # Configuration
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
-MODEL_NAME = "HuggingFaceTB/SmolLM3-3B"
+
+# Robust & free LLM model for Bible Q&A
+# # MODEL_NAME = "allenai/Olmo-3.1-32B-Instruct"
+
+# Fallback LLM for faster response (less robust)
+MODEL_NAME = "swiss-ai/Apertus-8B-Instruct-2509"
+
 TOP_K = 10
+MIN_SCORE = 0.4
 MAX_TOKENS = 1024
 TEMPERATURE = 0.0
 
@@ -59,9 +66,9 @@ def retrieve_context(query: str, top_k: int = TOP_K, verbose: bool = False) -> s
     if not retrieved:
         return ""
 
-    reranked = rerank_chunks(retrieved, query, min_score=0.4, verbose=verbose)
+    reranked = rerank_chunks(retrieved, query, min_score=MIN_SCORE, verbose=verbose)
 
-    return format_context(reranked, verse_indices)
+    return format_context(reranked[:5], verse_indices)
 
 def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, verbose: bool = False) -> str:
     """
@@ -84,16 +91,35 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
     if not use_llm:
         return context
 
-    user_prompt = (
-        f"Question: {query}\n\n"
-        f"Using ONLY the following Scripture passages, answer the question:\n\n"
-        f"{context}\n\n"
-    )
+    user_prompt = f"""
+        Question:
+        {query}
+
+        Below are Scripture passages retrieved as potentially relevant.
+
+        You may choose to focus ONLY on the passages that most directly answer the question.
+        Do NOT feel required to use every passage.
+
+        Scripture passages:
+        {context}
+
+        Instructions:
+        - Answer the question using only the Scripture above.
+        - Prefer the clearest and most relevant passages.
+        - Quote verses where appropriate.
+        - If explaining, ensure the explanation is directly grounded in the quoted text.
+        - If none of the passages clearly answer the question, state that explicitly.
+        Please provide a concise, text-faithful answer based solely on the Scripture passages provided.
+        """.strip()
+
+    if verbose:
+        print("=== PROMPT SENT TO LLM ===")
+        print(user_prompt)
 
     return query_hf(MODEL_NAME, user_prompt, MAX_TOKENS, TEMPERATURE)
 
 if __name__ == "__main__":
     question = input("\nAsk a Bible question:\n> ")
-    answer = retrieve_and_answer(question)
+    answer = retrieve_and_answer(question, verbose=False, use_llm=True)
     print("\n=== Answer ===\n")
     print(answer)
