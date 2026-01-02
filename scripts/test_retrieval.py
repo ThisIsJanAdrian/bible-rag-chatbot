@@ -16,7 +16,6 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from retrieval.retrieve import get_collection, retrieve_chunks
-from retrieval.retrieval_preprocessing import preprocess_query
 from retrieval.reranking import rerank_chunks
 from retrieval.format_context import format_context
 
@@ -27,7 +26,7 @@ VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 
 # Configuration
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
-TOP_K = 10
+TOP_K = 25
 
 # Load verse indices
 with open(VERSE_INDICES_FILE, "r", encoding="utf-8") as f:
@@ -42,15 +41,13 @@ print(f"Total documents: {collection.count()}")
 # Acquire and preprocess user query
 user_query = input("\nAsk a Bible question:\n> ")
 print(f"User query: {user_query}")
-clean_query = preprocess_query(user_query)
-print(f"Preprocessed query: {clean_query}")
 
 # Perform retrieval
-results = retrieve_chunks(collection, clean_query, TOP_K)
+results = retrieve_chunks(collection, user_query, TOP_K)
 print(f"Retrieved {len(results)} chunks.")
 
 # Re-rank retrieved chunks
-reranked_results = rerank_chunks(results, user_query, min_score=0.3, verbose=True)
+reranked_results = rerank_chunks(results, user_query, min_score=0.4, verbose=True)
 print(f"{len(reranked_results)} chunks remain after re-ranking and filtering.")
 
 # Display results

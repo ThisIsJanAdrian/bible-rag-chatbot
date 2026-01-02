@@ -11,7 +11,6 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from retrieval.retrieve import get_collection, retrieve_chunks
-from retrieval.retrieval_preprocessing import preprocess_query
 from retrieval.reranking import rerank_chunks
 
 EVAL_SET = [
@@ -115,7 +114,7 @@ print(f"Total documents: {collection.count()}")
 
 def run_eval():
     for item in EVAL_SET:
-        query = preprocess_query(item["query"])
+        query = item["query"]
         expected_refs = item["expected_refs"]
 
         print(f"\nQuery: {query}")
