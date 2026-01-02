@@ -42,34 +42,54 @@ collection = get_collection(str(DB_DIR), CHROMA_COLLECTION_NAME)
 with open(VERSE_INDICES_FILE, "r", encoding="utf-8") as f:
     verse_indices = json.load(f)
 
-def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False) -> str:
+def retrieve_context(query: str, top_k: int = TOP_K, verbose: bool = False) -> str:
     """
-    Retrieve Scripture passages and generate a grounded answer.
+    Retrieve and format Scripture passages relevant to a query.
 
     Parameters:
         query (str): User question
         top_k (int): Number of chunks to retrieve
-        use_llm (bool): If True, use LLM to generate answer; otherwise return raw context
+        verbose (bool): If True, print detailed information
 
     Returns:
-        str: LLM-generated, Scripture-grounded answer
+        str: Formatted Scripture context
     """
     retrieved = retrieve_chunks(collection, preprocess_query(query), top_k=top_k)
+
     if not retrieved:
+        return ""
+
+    reranked = rerank_chunks(retrieved, query, min_score=0.4, verbose=verbose)
+
+    return format_context(reranked, verse_indices)
+
+def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, verbose: bool = False) -> str:
+    """
+    Retrieve Scripture passages and optionally generate a grounded answer.
+
+    Parameters:
+        query (str): User question
+        top_k (int): Number of chunks to retrieve
+        use_llm (bool): If True, generate LLM answer; else return Scripture context
+        verbose (bool): If True, print detailed information
+
+    Returns:
+        str: Scripture context or LLM-generated answer
+    """
+    context = retrieve_context(query, top_k=top_k, verbose=verbose)
+
+    if not context:
         return "No relevant Scripture passages found for this question."
-    
-    reranked = rerank_chunks(retrieved, query, min_score=0.4, verbose=False)
-    context = format_context(reranked, verse_indices)
 
     if not use_llm:
         return context
-    
+
     user_prompt = (
         f"Question: {query}\n\n"
         f"Using ONLY the following Scripture passages, answer the question:\n\n"
         f"{context}\n\n"
     )
-    
+
     return query_hf(MODEL_NAME, user_prompt, MAX_TOKENS, TEMPERATURE)
 
 if __name__ == "__main__":
