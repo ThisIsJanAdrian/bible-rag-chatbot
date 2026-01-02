@@ -39,7 +39,7 @@ app/
 
 data/
   ├── kjv_chunks.json             # Pre-chunked KJV Bible text with references
-  ├── kjv_verse_indeces.json      # Mapping of chunk IDs to book/chapter/verse
+  ├── kjv_verse_indices.json      # Mapping of chunk IDs to book/chapter/verse
   └── chroma_db/                  # Local Chroma vector store (gitignored)
 
 preprocessing/
@@ -52,11 +52,12 @@ retrieval/
   ├── reranking.py                # Hybrid re-ranking (embeddings + phrase overlap + query modes)
   ├── retrieval_preprocessing.py  # Query normalization, lemmatization, phrase extraction
   ├── retrieve.py                 # Vector search interface over ChromaDB
-  └── retrieve_and_answer.py      # End-to-end retrieval + LLM answer pipeline (to be updated)
+  └── retrieve_and_answer.py      # End-to-end chunk retrieval and (optional) LLM answer pipeline
 
 scripts/
   ├── create_chunks.py            # One-time script to generate Bible chunks
   ├── embed_chunks.py             # Generates embeddings and populates vector store
+  ├── eval_retrieval.py           # Script for chunk retrieval evaluation
   └── test_retrieval.py           # Entry point for chunk retrieval (no LLM)
 
 utils/
@@ -78,7 +79,7 @@ utils/
 - [x] `retrieve_and_answer.py` pipeline  
 - [x] System prompt for Scripture-only answers
 - [x] Retrieval evaluation & regression tests
-- [ ] Improve chunk reranking intelligence
+- [x] Improve chunk reranking intelligence
 - [ ] Local UI (Streamlit)  
 - [ ] Error handling and safeguards  
 - [ ] Expanded documentation and examples  
