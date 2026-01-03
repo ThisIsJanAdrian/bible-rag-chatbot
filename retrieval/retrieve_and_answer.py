@@ -30,10 +30,10 @@ VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
 
 # Robust & free LLM model for Bible Q&A
-# # MODEL_NAME = "allenai/Olmo-3.1-32B-Instruct"
+MODEL_NAME = "allenai/Olmo-3.1-32B-Instruct"
 
 # Fallback LLM for faster response (less robust)
-MODEL_NAME = "swiss-ai/Apertus-8B-Instruct-2509"
+# MODEL_NAME = "swiss-ai/Apertus-8B-Instruct-2509"
 
 TOP_K = 25
 MIN_SCORE = 0.4
@@ -94,21 +94,26 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
         Question:
         {query}
 
-        Below are Scripture passages retrieved as potentially relevant.
-
-        You may choose to focus ONLY on the passages that most directly answer the question.
-        Do NOT feel required to use every passage.
+        Below are the Scripture passages retrieved as potentially relevant.
+        Each passage is numbered and fully self-contained.
+        You MUST only quote or reference the passages below. Do NOT include any verse not listed.
 
         Scripture passages:
         {context}
 
         Instructions:
-        - Answer the question using only the Scripture above.
-        - Prefer the clearest and most relevant passages.
-        - Quote verses where appropriate.
-        - If explaining, ensure the explanation is directly grounded in the quoted text.
-        - If none of the passages clearly answer the question, state that explicitly.
-        Please provide a concise, text-faithful answer based solely on the Scripture passages provided.
+        Answer using the following structure ONLY:
+
+        1. Quoted Scripture (with reference)
+        2. Brief explanation of that quoted Scripture
+
+        Repeat as needed.
+        Answer the question using only the passages above.
+        Quote passages by their chapters and verses. You can choose to cite some or all of the verses depending on their relevance.
+        Clarify archaic words or expressions in parentheses if needed, but do not change the meaning.
+        Provide concise, text-faithful explanations strictly grounded in the quoted text.
+        If none of the passages clearly answer the question, state this explicitly.
+        Do not invent information or recall verses outside the listed passages.
         """.strip()
 
     if verbose:
@@ -116,9 +121,3 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
         print(user_prompt)
 
     return query_hf(MODEL_NAME, user_prompt, MAX_TOKENS, TEMPERATURE)
-
-if __name__ == "__main__":
-    question = input("\nAsk a Bible question:\n> ")
-    answer = retrieve_and_answer(question, verbose=False, use_llm=True)
-    print("\n=== Answer ===\n")
-    print(answer)

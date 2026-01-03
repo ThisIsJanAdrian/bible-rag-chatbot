@@ -28,14 +28,14 @@ Think of BibleBro as your **Bible study aide**, intentionally unbiased and speak
 4. **Vector Store** – Persistent ChromaDB storage  
 5. **Retrieval** – Semantic search with verse-level reconstruction  
 6. **Context Formatting** – Human-readable Scripture blocks  
-7. **(Planned)** LLM Integration – Scripture-grounded answers only  
+7. **LLM Integration** – Scripture-grounded answers only 
 
 ---
 
 ## 📂 Project Structure
 ```
 app/
-  └── chat.py                     # Entry point for chatbot interface (soon)
+  └── chat.py                     # Entry point for chatbot interface (CLI)
 
 data/
   ├── kjv_chunks.json             # Pre-chunked KJV Bible text with references
@@ -48,9 +48,9 @@ preprocessing/
 
 retrieval/
   ├── format_context.py           # Formats retrieved passages for LLM prompting
+  ├── preprocessing_retrieval.py  # Query normalization, lemmatization, phrase extraction
   ├── query_modes.py              # Heuristic detection of query intent (law, discourse, etc.)
   ├── reranking.py                # Hybrid re-ranking (embeddings + phrase overlap + query modes)
-  ├── retrieval_preprocessing.py  # Query normalization, lemmatization, phrase extraction
   ├── retrieve.py                 # Vector search interface over ChromaDB
   └── retrieve_and_answer.py      # End-to-end chunk retrieval and (optional) LLM answer pipeline
 
@@ -80,6 +80,7 @@ utils/
 - [x] System prompt for Scripture-only answers
 - [x] Retrieval evaluation & regression tests
 - [x] Improve chunk reranking intelligence
+- [x] CLI implementation
 - [ ] Local UI (Streamlit)  
 - [ ] Error handling and safeguards  
 - [ ] Expanded documentation and examples  
