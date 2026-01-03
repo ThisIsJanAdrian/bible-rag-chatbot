@@ -144,7 +144,7 @@ def detect_query_modes(query: str, verbose: bool = False) -> Dict[str, float]:
 
     Parameters:
         query (str): User query.
-        verbose (bool): If True, print debug info
+        verbose (bool): If True, print debug info.
     
     Returns:
         Dict[str, float]: Mapping of mode -> confidence score (0.0 to 1.0).

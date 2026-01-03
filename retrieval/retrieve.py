@@ -24,51 +24,7 @@ def get_collection(db_path: str, collection_name: str) -> chromadb.Collection:
     client = chromadb.PersistentClient(path=db_path)
     return client.get_collection(name=collection_name)
 
-# def retrieve_chunks(
-#     collection: chromadb.Collection,
-#     query: str,
-#     top_k: int
-# ) -> List[Dict]:
-#     """
-#     Retrieve top-k relevant Bible chunks for a query.
-
-#     Parameters:
-#         collection (chromadb.Collection): The ChromaDB collection to query.
-#         query (str): Natural language query string.
-#         top_k (int): Number of top results to return.
-
-#     Returns:
-#         List[Dict]: Each dict contains:
-#             {
-#                 "id": str,            # chunk UUID
-#                 "text": str,          # chunk text
-#                 "metadata": dict      # chunk metadata (book, chapter_start, verse_start, chapter_end, verse_end, testament, section)
-#                 "score": float        # embedding similarity score
-#             }
-#     """
-#     results = collection.query(
-#         query_texts=[query],
-#         n_results=top_k,
-#         include=["documents", "metadatas", "distances"]
-#     )
-
-#     retrieved = []
-#     for chunk_id, doc, meta, score in zip(
-#         results["ids"][0],
-#         results["documents"][0],
-#         results["metadatas"][0],
-#         results["distances"][0]
-#     ):
-#         retrieved.append({
-#             "id": chunk_id,
-#             "text": doc,
-#             "metadata": meta,
-#             "score": score
-#         })
-
-#     return retrieved
-
-def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int) -> List[Dict]:
+def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int, verbose: bool = False) -> List[Dict]:
     """
     Retrieve top-k relevant Bible chunks for a query, optionally filtering by book and chapter.
 
@@ -76,6 +32,7 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int) -> 
         collection (chromadb.Collection): The ChromaDB collection to query.
         query (str): User query.
         top_k (int): Number of top results to return.
+        verbose (bool): If True, print debug info.
 
     Returns:
         List[Dict]: Each dict contains:
@@ -86,11 +43,21 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int) -> 
                 "score": float        # embedding similarity score
             }
     """
+
+    if verbose:
+        print("\nRetrieving chunks from ChromaDB...")
+
     # Extract book and chapter from query if present
-    book, chapter, _ = extract_book_chapter(query)
+    book, chapter, verse = extract_book_chapter(query)
+
+    if verbose and book:
+        print(f"Extracted book: {book}, Chapter: {chapter}, Verse range: {verse}\n")
     
     # Apply query preprocessing
     query = preprocess_query(query)
+
+    if verbose:
+        print(f"Preprocessed query: {query}")
 
     # Apply metadata filter when specific book detected
     where = {'book': book} if book else None
@@ -119,5 +86,8 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int) -> 
             "metadata": meta,
             "score": score
         })
+
+    if verbose:
+        print(f"Retrieved {len(retrieved)} chunks from database.")
 
     return retrieved

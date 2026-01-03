@@ -10,7 +10,10 @@ No retrieval, no LLM calls, no interpretation.
 
 from typing import List, Dict
 
-def format_context(retrieved_chunks: List[Dict], verse_indices: Dict[str, List[int]]):
+# Set hard limit on chunks sent to LLM to save on token usage
+CHUNK_LIMIT = 15
+
+def format_context(retrieved_chunks: List[Dict], verse_indices: Dict[str, List[int]], verbose: bool = False):
     """
     Format retrieved Bible chunks into a readable context
     with clear passage boundaries and verse awareness.
@@ -18,13 +21,21 @@ def format_context(retrieved_chunks: List[Dict], verse_indices: Dict[str, List[i
     Parameters:
         retrieved_chunks (list[dict]): Output from retrieve_chunks().
         verse_indices (dict): Mapping of chunk_id -> verse index list.
+        verbose (bool): If True, print debug info.
 
     Returns:
         str: Formatted context string for LLM input.
     """
-    passages = []
 
-    for idx, chunk in enumerate(retrieved_chunks, start=1):
+    if verbose:
+        print("Formatting context for LLM...")
+        if CHUNK_LIMIT:
+            print(f"Context sent to LLM is limited to {CHUNK_LIMIT} chunks.")
+
+    passages = []
+    reference_list = []
+
+    for idx, chunk in enumerate(retrieved_chunks[:CHUNK_LIMIT], start=1):
         chunk_id = chunk["id"]
         text = chunk["text"]
         meta = chunk["metadata"]
@@ -41,6 +52,8 @@ def format_context(retrieved_chunks: List[Dict], verse_indices: Dict[str, List[i
                 f"{meta['chapter_start']}:{meta['verse_start']}-"
                 f"{meta['chapter_end']}:{meta['verse_end']}"
             )
+        
+        reference_list.append(reference)
 
         verse_list = verse_indices.get(chunk_id)
         if not verse_list:
@@ -55,5 +68,10 @@ def format_context(retrieved_chunks: List[Dict], verse_indices: Dict[str, List[i
 
         passage_block = f"[Passage {idx}]\nChunk reference: {reference}\n{formatted_text}"
         passages.append(passage_block)
+    
+    if verbose:
+        print("Reference passages sent to the LLM:")
+        for ref in reference_list:
+            print(f"-> {ref}")
 
-    return "\n\n".join(passages)
+    return "\n".join(passages)

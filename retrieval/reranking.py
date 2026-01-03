@@ -116,7 +116,7 @@ def compute_alpha_from_query_modes(query_modes: Dict[str, float], verbose: bool 
     if verbose:
         print(f"Alpha: {alpha:.4f}")
 
-    return min(0.90, max(0.1, alpha))
+    return min(0.9, max(0.1, alpha))
 
 def rerank_chunks(chunks: List[Dict], query: str, min_score: float = 0.3, verbose: bool = False) -> List[Dict]:
     """
@@ -125,15 +125,21 @@ def rerank_chunks(chunks: List[Dict], query: str, min_score: float = 0.3, verbos
 
     Parameters:
         chunks (List[Dict]): Each dict contains:
-            - 'text' (str): Chunk text
-            - 'score' (float): Embedding similarity score
-        query (str): Raw user question
-        min_score (float): Minimum combined score to include chunk
-        verbose (bool): If True, print debug info
+            - "id": str,            # chunk UUID
+            - "text": str,          # chunk text
+            - "metadata": dict      # chunk metadata (book, chapter_start, verse_start, chapter_end, verse_end, testament, section)
+            - "score": float        # embedding similarity score
+        query (str): Raw user question.
+        min_score (float): Minimum combined score to include chunk.
+        verbose (bool): If True, print debug info.
 
     Returns:
         List[Dict]: Re-ranked chunks in descending order by combined score. Each dict has an added 're_rank_score' key.
     """
+
+    if verbose:
+        print("Reranking chunks...")
+
     query_modes = detect_query_modes(query, verbose=verbose)
     alpha = compute_alpha_from_query_modes(query_modes, verbose=verbose)
 
@@ -143,12 +149,32 @@ def rerank_chunks(chunks: List[Dict], query: str, min_score: float = 0.3, verbos
         phrase_score = compute_phrase_overlap(query, chunk["text"])
         embedding_score = chunk.get("score", 0.0)        
         chunk["re_rank_score"] = alpha * embedding_score + (1 - alpha) * phrase_score
-
-        if verbose:
-            print(f"Chunk text: {chunk['text'][:50]}...")
-            print(f"Re-rank score: {chunk['re_rank_score']:.4f} (Embed: {embedding_score:.4f}, Phrase: {phrase_score:.4f})\n")
         
         if chunk["re_rank_score"] >= min_score:
             filtered_chunks.append(chunk)
 
-    return sorted(filtered_chunks, key=lambda x: x["re_rank_score"], reverse=True)
+            if verbose:
+                meta = chunk["metadata"]
+                if meta["chapter_start"] == meta["chapter_end"]:
+                    reference = (
+                        f"{meta['book']} "
+                        f"{meta['chapter_start']}:{meta['verse_start']}-"
+                        f"{meta['verse_end']}"
+                    )
+                else:
+                    reference = (
+                        f"{meta['book']} "
+                        f"{meta['chapter_start']}:{meta['verse_start']}-"
+                        f"{meta['chapter_end']}:{meta['verse_end']}"
+                    )
+                print(f"{reference} | score={chunk['re_rank_score']:.3f} (e={embedding_score:.3f}, p={phrase_score:.3f})")
+
+    reranked = sorted(filtered_chunks, key=lambda x: x["re_rank_score"], reverse=True)
+
+    if verbose:
+        if len(reranked) != 1:
+            print(f"{len(reranked)} chunks left after reranking.")
+        else:
+            print(f"{len(reranked)} chunk left after reranking.")
+        
+    return reranked

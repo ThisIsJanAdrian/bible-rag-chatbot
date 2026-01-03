@@ -58,7 +58,6 @@ def extract_book_chapter(query: str) -> tuple[Optional[str], Optional[int], Opti
 
     book = book_match.group(0)
 
-    # Look for numbers immediately after book name
     after_book = query[book_match.end():].strip()
     chapter = None
     verse_range = None
@@ -69,6 +68,17 @@ def extract_book_chapter(query: str) -> tuple[Optional[str], Optional[int], Opti
         if chap_match.group(2):
             verse_range = chap_match.group(2)
 
+    # Normalization of book names
+    match book:
+        case "Psalm":
+            book = "Psalms"
+        case "Proverb":
+            book = "Proverbs"
+        case "Lamentation":
+            book = "Lamentations"
+        case "Revelations":
+            book = "Revelation"
+        
     return book, chapter, verse_range
 
 # Lazy-load spaCy model

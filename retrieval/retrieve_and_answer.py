@@ -10,7 +10,7 @@ This script assumes:
 - Retrieval and formatting modules are available
 """
 
-import sys, json
+import sys, json, time
 from pathlib import Path
 
 # Add project root to sys.path
@@ -60,14 +60,29 @@ def retrieve_context(query: str, top_k: int = TOP_K, verbose: bool = False) -> s
     Returns:
         str: Formatted Scripture context
     """
-    retrieved = retrieve_chunks(collection, query, top_k=top_k)
+    
+    start = time.perf_counter()
+    retrieved = retrieve_chunks(collection, query, top_k=top_k, verbose=verbose)
+    elapsed = time.perf_counter() - start
+    if verbose:
+        print(f"Retrieval time: {elapsed:.3f}s\n")
 
     if not retrieved:
         return ""
 
+    start = time.perf_counter()
     reranked = rerank_chunks(retrieved, query, min_score=MIN_SCORE, verbose=verbose)
+    elapsed = time.perf_counter() - start
+    if verbose:
+        print(f"Reranking time: {elapsed:.3f}s\n")
 
-    return format_context(reranked[:10], verse_indices)
+    start = time.perf_counter()
+    formatted = format_context(reranked, verse_indices, verbose=verbose)
+    elapsed = time.perf_counter() - start
+    if verbose:
+        print(f"Formatting time: {elapsed:.3f}s\n")
+
+    return formatted
 
 def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, verbose: bool = False) -> str:
     """
@@ -82,6 +97,7 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
     Returns:
         str: Scripture context or LLM-generated answer
     """
+
     context = retrieve_context(query, top_k=top_k, verbose=verbose)
 
     if not context:
@@ -94,30 +110,34 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
         Question:
         {query}
 
-        Below are the Scripture passages retrieved as potentially relevant.
-        Each passage is numbered and fully self-contained.
-        You MUST only quote or reference the passages below. Do NOT include any verse not listed.
+        Below are Scripture passages retrieved as potentially relevant.
+        Each passage is complete and self-contained.
+        You MUST only quote or reference the passages listed below.
 
         Scripture passages:
         {context}
 
-        Instructions:
-        Answer using the following structure ONLY:
+        INSTRUCTIONS:
+        - Answer the question using ONLY the passages above.
+        - Quote Scripture verbatim by chapter and verse.
+        - Do NOT combine verses into a narrative unless the sequence is explicitly shown in the text provided.
+        - Do NOT assume missing verses or fill gaps.
+        - If the passages only partially address the question, say so explicitly.
 
-        1. Quoted Scripture (with reference)
-        2. Brief explanation of that quoted Scripture
+        EXPLANATION RULES:
+        - Quote Scripture first.
+        - Do NOT explain each verse individually.
+        - After quoting, provide at most TWO sentences summarizing what the quoted passages explicitly state.
+        - Do NOT describe events, timelines, or counts (e.g., days) unless fully supported by the quoted text.
+        - Do NOT use numbered lists unless the Scripture itself is sequential.
 
-        Repeat as needed.
-        Answer the question using only the passages above.
-        Quote passages by their chapters and verses. You can choose to cite some or all of the verses depending on their relevance.
-        Clarify archaic words or expressions in parentheses if needed, but do not change the meaning.
-        Provide concise, text-faithful explanations strictly grounded in the quoted text.
-        If none of the passages clearly answer the question, state this explicitly.
-        Do not invent information or recall verses outside the listed passages.
+        If the passages do not fully answer the question, state that plainly.
         """.strip()
-
+    
+    start = time.perf_counter()
+    answer = query_hf(MODEL_NAME, user_prompt, MAX_TOKENS, TEMPERATURE, verbose=verbose)
+    elapsed = time.perf_counter() - start
     if verbose:
-        print("=== PROMPT SENT TO LLM ===")
-        print(user_prompt)
+        print(f"Inference time: {elapsed:.3f}s\n")
 
-    return query_hf(MODEL_NAME, user_prompt, MAX_TOKENS, TEMPERATURE)
+    return answer
