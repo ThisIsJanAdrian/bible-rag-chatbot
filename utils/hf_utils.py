@@ -39,6 +39,7 @@ ALLOWED:
 
 If the provided passages do not fully answer the question, state this clearly and stop.
 Do NOT mention or allude to missing commonly known verses.
+If your response does not exactly follow the OUTPUT FORMAT, it is considered incorrect.
 Always remain literal, text-faithful, and bounded by the given passages.
 """.strip()
 

@@ -29,11 +29,8 @@ VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 # Configuration
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
 
-# Robust & free LLM model for Bible Q&A
+# Default LLM model for Bible Q&A
 MODEL_NAME = "allenai/Olmo-3.1-32B-Instruct"
-
-# Fallback LLM for faster response (less robust)
-# MODEL_NAME = "swiss-ai/Apertus-8B-Instruct-2509"
 
 TOP_K = 25
 MIN_SCORE = 0.4
@@ -84,7 +81,7 @@ def retrieve_context(query: str, top_k: int = TOP_K, verbose: bool = False) -> s
 
     return formatted
 
-def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, verbose: bool = False) -> str:
+def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, verbose: bool = False, model: str = MODEL_NAME) -> str:
     """
     Retrieve Scripture passages and optionally generate a grounded answer.
 
@@ -107,35 +104,35 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
         return context
 
     user_prompt = f"""
-        Question:
-        {query}
+    Question:
+    {query}
 
-        Below are Scripture passages retrieved as potentially relevant.
-        Each passage is complete and self-contained.
-        You MUST only quote or reference the passages listed below.
+    Below are the ONLY Scripture passages you may use.
+    You MUST NOT quote, paraphrase, or refer to any verse not listed.
 
-        Scripture passages:
-        {context}
+    Scripture passages:
+    {context}
 
-        INSTRUCTIONS:
-        - Answer the question using ONLY the passages above.
-        - Quote Scripture verbatim by chapter and verse.
-        - Do NOT combine verses into a narrative unless the sequence is explicitly shown in the text provided.
-        - Do NOT assume missing verses or fill gaps.
-        - If the passages only partially address the question, say so explicitly.
+    OUTPUT FORMAT (MANDATORY):
+    --------------------------------
+    Scripture:
+    "<verbatim quotation(s) from the passages above>"
 
-        EXPLANATION RULES:
-        - Quote Scripture first.
-        - Do NOT explain each verse individually.
-        - After quoting, provide at most TWO sentences summarizing what the quoted passages explicitly state.
-        - Do NOT describe events, timelines, or counts (e.g., days) unless fully supported by the quoted text.
-        - Do NOT use numbered lists unless the Scripture itself is sequential.
+    Summary:
+    <ONE or TWO sentences summarizing what the quoted Scripture shows>
+    --------------------------------
 
-        If the passages do not fully answer the question, state that plainly.
-        """.strip()
+    RULES:
+    - Quote Scripture FIRST, exactly as provided.
+    - Do NOT explain verse-by-verse.
+    - Do NOT add commentary beyond the Summary section.
+    - Do NOT restate ideas not explicitly present in the quoted text.
+    - If the passages do not answer the question, write:
+    "The provided passages do not clearly answer this question."
+    """.strip()
     
     start = time.perf_counter()
-    answer = query_hf(MODEL_NAME, user_prompt, MAX_TOKENS, TEMPERATURE, verbose=verbose)
+    answer = query_hf(model, user_prompt, MAX_TOKENS, TEMPERATURE, verbose=verbose)
     elapsed = time.perf_counter() - start
     if verbose:
         print(f"Inference time: {elapsed:.3f}s\n")
