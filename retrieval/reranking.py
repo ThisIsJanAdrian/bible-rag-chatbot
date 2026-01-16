@@ -10,7 +10,7 @@ signals to prioritize passages most relevant to the user's question.
 import math, re
 from typing import List, Dict
 
-from retrieval.preprocessing_retrieval import get_spacy_nlp
+from retrieval.preprocessing_query import get_spacy_nlp
 from retrieval.query_modes import detect_query_modes
 
 # Configuration

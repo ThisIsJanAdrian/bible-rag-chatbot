@@ -1,5 +1,5 @@
 """
-preprocessing_retrieval.py
+preprocessing_query.py
 
 Utilities for normalizing and preprocessing user queries and Bible text
 prior to semantic retrieval.
@@ -16,8 +16,17 @@ or phrase comparison, helping improve relevance and grounding
 in Scripture passages.
 """
 
-import re, spacy
+import sys, re, spacy
 from typing import Optional
+from pathlib import Path
+
+# Add project root to sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from utils.hf_utils import check_model_inference_status, query_hf
+
+# Model for query rewriting
+REWRITE_SLM_MODEL_NAME = "allenai/Olmo-3-7B-Instruct"
 
 # Full list of KJV books (including numbered ones)
 BIBLE_BOOKS = [
@@ -46,6 +55,9 @@ CHAPTER_VERSE_PATTERN = re.compile(r"(\d{1,3})(?::(\d{1,3}(?:-\d{1,3})?))?")
 def extract_book_chapter(query: str) -> tuple[Optional[str], Optional[int], Optional[str]]:
     """
     Extract Bible book, optional chapter, and optional verse range from query.
+
+    Parameters:
+        query (str): User query potentially containing book/chapter info.
 
     Returns:
         book (str | None): Name of the book if found
@@ -81,6 +93,58 @@ def extract_book_chapter(query: str) -> tuple[Optional[str], Optional[int], Opti
         
     return book, chapter, verse_range
 
+def rewrite_query(query: str) -> str:
+    """
+    Rewrite user query into retrieval-friendly language without changing meaning.
+
+    Parameters:
+        query (str): Original user query.
+    
+    Returns:
+        str: Rewritten query.
+    """
+    prompt = f"""
+    You rewrite Bible search queries for retrieval from a KJV Scripture corpus.
+
+    TASK:
+    Rewrite the user query into retrieval-friendly keywords or short phrases.
+
+    RULES:
+    - Preserve the original meaning.
+    - Do NOT explain, interpret, or summarize theology.
+    - Do NOT recall or quote Scripture.
+    - Do NOT add verse references.
+    - Expand with semantically related terms when helpful.
+    - Prefer KJV-style and archaic terms where appropriate
+    (e.g., love → charity, sin → iniquity, forgive → remission).
+    - Output should resemble a search query or keyword list, not a sentence.
+
+    EXAMPLES:
+    Query: give me Scriptures that talk about love in action  
+    Rewrite: love charity kindness mercy good works faithful deeds
+
+    Query: forgiveness of sins  
+    Rewrite: forgiveness remission sins iniquity transgression mercy
+
+    Query: mark of the beast  
+    Rewrite: mark beast number hand forehead worship
+
+    Query: What does the Bible say about love in 1 Corinthians 13?  
+    Rewrite: love charity longsuffering kindness envy vaunteth not
+
+    USER QUERY:
+    {query}
+
+    Rewrite:
+    """.strip()
+
+    # Check Hugging Face model availability
+    check_model_inference_status(REWRITE_SLM_MODEL_NAME)
+
+    rewritten = query_hf(model_name=REWRITE_SLM_MODEL_NAME, user_prompt=prompt, system_prompt="", temperature=0.0, max_tokens=256)
+
+    return rewritten
+
 # Lazy-load spaCy model
 _nlp = None
 
@@ -96,7 +160,7 @@ def get_spacy_nlp():
         _nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
     return _nlp
 
-def preprocess_query(query: str) -> str:
+def normalize_query(query: str) -> str:
     """
     Normalize a user query for semantic retrieval.
 

@@ -6,9 +6,9 @@ reusable functions to query the ChromaDB collection and
 returns semantically relevant Bible text chunks.
 """
 
-import chromadb
+import chromadb, time
 from typing import List, Dict
-from retrieval.preprocessing_retrieval import extract_book_chapter, preprocess_query
+from retrieval.preprocessing_query import extract_book_chapter, rewrite_query, normalize_query
 
 def get_collection(db_path: str, collection_name: str) -> chromadb.Collection:
     """
@@ -44,8 +44,10 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int, ver
             }
     """
 
+    start = time.perf_counter()
+
     if verbose:
-        print("\nRetrieving chunks from ChromaDB...")
+        print("\nPreprocessing query...")
 
     # Extract book and chapter from query if present
     book, chapter, verse = extract_book_chapter(query)
@@ -53,11 +55,25 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int, ver
     if verbose and book:
         print(f"Extracted book: {book}, Chapter: {chapter}, Verse range: {verse}\n")
     
-    # Apply query preprocessing
-    query = preprocess_query(query)
+    # Use SLM-rewritten query for retrieval
+    query = " ".join([query, rewrite_query(query)])
 
     if verbose:
-        print(f"Preprocessed query: {query}")
+        print(f"SLM-rewritten query: {query}")
+    
+    # Apply query normalization
+    query = normalize_query(query)
+
+    if verbose:
+        print(f"spaCy-normalized query: {query}")
+
+    elapsed = time.perf_counter() - start
+
+    if verbose:
+        print(f"Preprocessing time: {elapsed:.3f}s\n")
+        print("\nRetrieving chunks from ChromaDB...")
+        
+    start = time.perf_counter()
 
     # Apply metadata filter when specific book detected
     where = {'book': book} if book else None
@@ -78,7 +94,7 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int, ver
     ):
         # Apply post-retrieval filter when specific chapter detected
         if chapter is not None:
-            if not (meta["chapter_start"] <= int(chapter) <= meta["chapter_end"]):
+            if not (meta["chapter_start"] <= int(chapter) and int(chapter) <= meta["chapter_end"]):
                 continue  # skip chunks outside the requested chapter
         retrieved.append({
             "id": chunk_id,
@@ -87,7 +103,10 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int, ver
             "score": score
         })
 
+    elapsed = time.perf_counter() - start
+
     if verbose:
+        print(f"Retrieval time: {elapsed:.3f}s\n")
         print(f"Retrieved {len(retrieved)} chunks from database.")
 
     return retrieved

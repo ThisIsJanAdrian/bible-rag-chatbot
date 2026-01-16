@@ -37,10 +37,48 @@ ALLOWED:
 - Clarify archaic words or expressions in parentheses if needed (e.g., charity → love), without changing meaning.
 - Restate Scripture in simpler language ONLY when directly grounded in quoted verses.
 
-If the provided passages do not fully answer the question, state this clearly and stop.
-Do NOT mention or allude to missing commonly known verses.
+IDENTITY & SCOPE RULE:
+If a question asks for an identity, role, relationship, doctrine, or explanation
+that is not explicitly stated in the provided passages,
+state clearly that the passages do not directly answer the question,
+even if related or surrounding passages are included.
+Do NOT mention or allude to missing or commonly known verses.
+
+OUTPUT FORMAT COMPLIANCE:
 If your response does not exactly follow the OUTPUT FORMAT, it is considered incorrect.
-Always remain literal, text-faithful, and bounded by the given passages.
+Always remain literal, text-faithful, and strictly bounded by the given passages.
+
+BEHAVIORAL EXAMPLES (FOR GUIDANCE)
+
+Example 1 — Direct textual question:
+Question: What does Revelation say about the new heaven?
+Provided passages: Revelation 21:1
+Correct behavior:
+Quote Revelation 21:1 and summarize exactly what it states.
+Do not add interpretation beyond the quoted text.
+
+Example 2 — Partial-support question:
+Question: Who is the real father of Jesus?
+Provided passages: Matthew 1:1-17
+Correct behavior:
+Explain that the passage presents a genealogy through Joseph.
+State that the passage does not explicitly identify Jesus’ father.
+Do not infer doctrine or reference other passages.
+
+Example 3 — Doctrinal question:
+Question: What does the Bible teach about the Trinity?
+Provided passages: John 1:1; Matthew 28:19
+Correct behavior:
+Describe only what each passage explicitly states.
+Do not synthesize doctrine unless the passages themselves explicitly connect the idea.
+If doctrine cannot be stated directly, say so.
+
+Example 4 — Misleading or underspecified question:
+Question: Does the Bible say Christians should never suffer?
+Provided passages: Psalm 34:19
+Correct behavior:
+Quote the passage and explain what it states.
+Do not answer beyond the scope of the text or address claims not made by the passage.
 """.strip()
 
 def check_model_inference_status(model_name: str) -> bool:
@@ -61,13 +99,14 @@ def check_model_inference_status(model_name: str) -> bool:
         print(f"Error checking model {model_name}: {e}")
         return False
 
-def query_hf(model_name: str, prompt: str, max_tokens: int = 512, temperature: float = 0.0, verbose: bool = False) -> str:
+def query_hf(model_name: str, user_prompt: str, system_prompt: str = SYSTEM_PROMPT, max_tokens: int = 512, temperature: float = 0.0, verbose: bool = False) -> str:
     """
     Send a prompt to a Hugging Face model via the inference API and return the generated text.
 
     Parameters:
         model_name (str): The Hugging Face model ID to query (e.g., 'mistralai/Mistral-7B-v0.2').
-        prompt (str): The text prompt to provide to the model.
+        user_prompt (str): The text prompt to provide to the model.
+        system_prompt (str): The system prompt to set the behavior of the model.
         max_tokens (int, optional): Maximum number of new tokens to generate. Default is 512.
         verbose (bool): If True, print debug info.
 
@@ -84,8 +123,8 @@ def query_hf(model_name: str, prompt: str, max_tokens: int = 512, temperature: f
     
     payload = {
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
         ],
         "model": model_name,
         "max_tokens": max_tokens,

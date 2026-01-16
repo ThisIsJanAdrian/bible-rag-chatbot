@@ -26,7 +26,7 @@ def main():
             if question.lower().strip() in {"quit", "exit", "x"}:
                 print("\nGoodbye! Stay blessed.\n")
                 break
-            if not question:
+            if not question.strip():
                 continue
 
             answer = retrieve_and_answer(question, verbose=True, use_llm=True)

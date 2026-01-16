@@ -37,9 +37,6 @@ MIN_SCORE = 0.4
 MAX_TOKENS = 1024
 TEMPERATURE = 0.0
 
-# Check Hugging Face model availability
-check_model_inference_status(MODEL_NAME)
-
 # Initialize external resources
 collection = get_collection(str(DB_DIR), CHROMA_COLLECTION_NAME)
 with open(VERSE_INDICES_FILE, "r", encoding="utf-8") as f:
@@ -58,11 +55,7 @@ def retrieve_context(query: str, top_k: int = TOP_K, verbose: bool = False) -> s
         str: Formatted Scripture context
     """
     
-    start = time.perf_counter()
     retrieved = retrieve_chunks(collection, query, top_k=top_k, verbose=verbose)
-    elapsed = time.perf_counter() - start
-    if verbose:
-        print(f"Retrieval time: {elapsed:.3f}s\n")
 
     if not retrieved:
         return ""
@@ -104,7 +97,35 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
         return context
 
     user_prompt = f"""
-    Question:
+    RULES:
+    - Quote Scripture FIRST, exactly as provided.
+    - Do NOT explain verse-by-verse.
+    - Do NOT add commentary beyond the Summary section.
+    - Do NOT restate ideas not present in the quoted text.
+
+    -----
+
+    OUTPUT FORMAT (MANDATORY):
+    Scripture:
+    "<verbatim quotation(s) from the passages above>"
+
+    Summary:
+    <TWO or MORE sentences summarizing what the quoted Scripture shows>
+
+    EXAMPLE:
+    Scripture:
+    "John bare record, saying, I saw the Spirit descending from heaven like a dove, and it abode upon him." (John 1:32)
+    "This is he that came by water and blood, even Jesus Christ; not by water only, but by water and blood. And it is the Spirit that beareth witness, because the Spirit is truth." (1 John 5:6)
+    "Who is he that overcometh the world, but he that believeth that Jesus is the Son of God?" (1 John 5:5)
+    "I am the living bread which came down from heaven..." (John 6:51)
+    "I have many things to say and to judge of you: but he that sent me is true; and I speak to the world those things which I have heard of him." (John 8:26)
+
+    Summary:
+    The passages affirm that Jesus is the Son of God and emphasize his divine origin and mission. However, they do not explicitly identify or describe Jesus' earthly or human father.
+
+    -----
+
+    User Query:
     {query}
 
     Below are the ONLY Scripture passages you may use.
@@ -112,27 +133,13 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
 
     Scripture passages:
     {context}
-
-    OUTPUT FORMAT (MANDATORY):
-    --------------------------------
-    Scripture:
-    "<verbatim quotation(s) from the passages above>"
-
-    Summary:
-    <ONE or TWO sentences summarizing what the quoted Scripture shows>
-    --------------------------------
-
-    RULES:
-    - Quote Scripture FIRST, exactly as provided.
-    - Do NOT explain verse-by-verse.
-    - Do NOT add commentary beyond the Summary section.
-    - Do NOT restate ideas not explicitly present in the quoted text.
-    - If the passages do not answer the question, write:
-    "The provided passages do not clearly answer this question."
     """.strip()
+
+    # Check Hugging Face model availability
+    check_model_inference_status(model)
     
     start = time.perf_counter()
-    answer = query_hf(model, user_prompt, MAX_TOKENS, TEMPERATURE, verbose=verbose)
+    answer = query_hf(model_name=model, user_prompt=user_prompt, max_tokens=MAX_TOKENS, temperature=TEMPERATURE, verbose=verbose)
     elapsed = time.perf_counter() - start
     if verbose:
         print(f"Inference time: {elapsed:.3f}s\n")
