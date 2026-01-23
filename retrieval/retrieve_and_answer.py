@@ -26,12 +26,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DB_DIR = BASE_DIR / "data" / "chroma_db"
 VERSE_INDICES_FILE = BASE_DIR / "data" / "kjv_verse_indices.json"
 
-# Configuration
+# Database configuration
 CHROMA_COLLECTION_NAME = "bible_kjv_chunks"
 
 # Default LLM model for Bible Q&A
 MODEL_NAME = "allenai/Olmo-3.1-32B-Instruct"
 
+# Retrieval and LLM parameters
 TOP_K = 25
 MIN_SCORE = 0.4
 MAX_TOKENS = 1024
@@ -97,42 +98,86 @@ def retrieve_and_answer(query: str, top_k: int = TOP_K, use_llm: bool = False, v
         return context
 
     user_prompt = f"""
-    RULES:
-    - Quote Scripture FIRST, exactly as provided.
-    - Do NOT explain verse-by-verse.
-    - Do NOT add commentary beyond the Summary section.
-    - Do NOT restate ideas not present in the quoted text.
+        RULES:
+        - Quote Scripture FIRST, exactly as provided.
+        - Quote ONLY passages that directly answer the question.
+        - Use the FEWEST passages possible.
+        - Prefer ONE passage if it fully answers the question.
+        - Use NO MORE THAN THREE passages total.
+        - Do NOT include background, surrounding, or loosely related verses.
+        - Do NOT explain verse-by-verse.
+        - Do NOT add commentary beyond the Summary section.
+        - Do NOT restate ideas not present in the quoted text.
 
-    -----
+        If none of the provided passages directly answer the question,
+        do NOT quote all passages.
+        Instead, quote ONLY the few most relevant passage(s),
+        OR state that the passages do not directly answer the question.
 
-    OUTPUT FORMAT (MANDATORY):
-    Scripture:
-    "<verbatim quotation(s) from the passages above>"
+        -----
 
-    Summary:
-    <TWO or MORE sentences summarizing what the quoted Scripture shows>
+        OUTPUT FORMAT (MANDATORY):
 
-    EXAMPLE:
-    Scripture:
-    "John bare record, saying, I saw the Spirit descending from heaven like a dove, and it abode upon him." (John 1:32)
-    "This is he that came by water and blood, even Jesus Christ; not by water only, but by water and blood. And it is the Spirit that beareth witness, because the Spirit is truth." (1 John 5:6)
-    "Who is he that overcometh the world, but he that believeth that Jesus is the Son of God?" (1 John 5:5)
-    "I am the living bread which came down from heaven..." (John 6:51)
-    "I have many things to say and to judge of you: but he that sent me is true; and I speak to the world those things which I have heard of him." (John 8:26)
+        Scripture:
+        "<verbatim quotation(s) from the passages above>"
 
-    Summary:
-    The passages affirm that Jesus is the Son of God and emphasize his divine origin and mission. However, they do not explicitly identify or describe Jesus' earthly or human father.
+        Summary:
+        <TWO or MORE sentences summarizing what the quoted Scripture shows>
 
-    -----
+        -----
 
-    User Query:
-    {query}
+        EXAMPLES OF IDEAL BEHAVIOR
 
-    Below are the ONLY Scripture passages you may use.
-    You MUST NOT quote, paraphrase, or refer to any verse not listed.
+        Example 1 — Identity / Relationship Question
 
-    Scripture passages:
-    {context}
+        Query:
+        Who is the real father of Jesus?
+
+        Scripture:
+        "Matthew 1:16 — And Jacob begat Joseph the husband of Mary, of whom was born Jesus, who is called Christ."
+
+        Summary:
+        The passage identifies Joseph as the husband of Mary, through whom Jesus was born. It does not explicitly state who Jesus' father is, so the passage does not directly answer the question beyond what is written.
+
+        -----
+
+        Example 2 — Thematic / Virtue Question
+
+        Query:
+        What does the Bible say about love in action?
+
+        Scripture:
+        "2 Timothy 4:8 — Henceforth there is laid up for me a crown of righteousness, which the Lord, the righteous judge, shall give me at that day: and not to me only, but unto all them also that love his appearing."
+
+        Summary:
+        The passage shows that love is expressed through faithful devotion and perseverance. Those who demonstrate love through their actions are promised reward by God.
+
+        -----
+
+        Example 3 — Historical / Opposition Question
+
+        Query:
+        What opposition did the Jews receive when rebuilding the temple?
+
+        Scripture:
+        "Ezra 4:4-5 — Then the people of the land weakened the hands of the people of Judah, and troubled them in building,
+        And hired counsellors against them, to frustrate their purpose, all the days of Cyrus king of Persia, even until the reign of Darius king of Persia."
+
+        "Ezra 4:23 — Then ceased the work of the house of God which is at Jerusalem. So it ceased unto the second year of the reign of Darius king of Persia."
+
+        Summary:
+        The passages state that the Jews faced active opposition that weakened and troubled their efforts. Counselors were hired to frustrate the rebuilding, and as a result, the work on the temple ceased for a time.
+
+        -----
+
+        User Query:
+        {query}
+
+        Below are the ONLY Scripture passages you may use.
+        You MUST NOT quote, paraphrase, or refer to any verse not listed.
+
+        Scripture passages:
+        {context}
     """.strip()
 
     # Check Hugging Face model availability

@@ -26,7 +26,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from utils.hf_utils import check_model_inference_status, query_hf
 
 # Model for query rewriting
-REWRITE_SLM_MODEL_NAME = "allenai/Olmo-3-7B-Instruct"
+REWRITE_SLM_MODEL_NAME = "Qwen/Qwen3-4B-Instruct-2507"
 
 # Full list of KJV books (including numbered ones)
 BIBLE_BOOKS = [

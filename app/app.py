@@ -35,6 +35,6 @@ query = st.text_input("Ask a Bible question")
 
 if st.button("Ask"):
     with st.spinner("Searching the Scriptures..."):
-        answer = retrieve_and_answer(query, verbose=True, use_llm=True)
+        answer = retrieve_and_answer(query, verbose=True, use_llm=True, model="meta-llama/Meta-Llama-3-8B-Instruct")
 
     render_answer(answer)

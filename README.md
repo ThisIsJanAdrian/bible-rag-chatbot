@@ -81,7 +81,7 @@ utils/
 - [x] Retrieval evaluation & regression tests
 - [x] Improve chunk reranking intelligence
 - [x] CLI implementation
-- [ ] Local UI (Streamlit)  
+- [x] Local UI (Streamlit)  
 - [ ] Error handling and safeguards  
 - [ ] Expanded documentation and examples  
 

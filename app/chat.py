@@ -29,7 +29,7 @@ def main():
             if not question.strip():
                 continue
 
-            answer = retrieve_and_answer(question, verbose=True, use_llm=True)
+            answer = retrieve_and_answer(question, verbose=True, use_llm=True, model="meta-llama/Meta-Llama-3-8B-Instruct")
 
             print("\n=== Answer ===\n")
             print(answer)

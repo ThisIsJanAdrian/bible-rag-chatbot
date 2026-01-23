@@ -47,7 +47,8 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int, ver
     start = time.perf_counter()
 
     if verbose:
-        print("\nPreprocessing query...")
+        print(f"\nUser query: {query}")
+        print("Preprocessing query...")
 
     # Extract book and chapter from query if present
     book, chapter, verse = extract_book_chapter(query)
@@ -62,7 +63,7 @@ def retrieve_chunks(collection: chromadb.Collection, query: str, top_k: int, ver
         print(f"SLM-rewritten query: {query}")
     
     # Apply query normalization
-    query = normalize_query(query)
+    query = " ".join([query, normalize_query(query)])
 
     if verbose:
         print(f"spaCy-normalized query: {query}")
